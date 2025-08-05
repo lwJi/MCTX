@@ -165,17 +165,9 @@ extern "C" void TestParticles_Init(CCTK_ARGUMENTS) {
             p.pos(1) = y;
             p.pos(2) = z;
 
-            arrdata[PIdx::ux][pidx] = u[0] * PhysConst::c;
-            arrdata[PIdx::uy][pidx] = u[1] * PhysConst::c;
-            arrdata[PIdx::uz][pidx] = u[2] * PhysConst::c;
-            arrdata[PIdx::w][pidx] = a_density * scale_fac;
-            arrdata[PIdx::Ex][pidx] = 0.0;
-            arrdata[PIdx::Ey][pidx] = 0.0;
-            arrdata[PIdx::Ez][pidx] = 0.0;
-            arrdata[PIdx::Bx][pidx] = 0.0;
-            arrdata[PIdx::By][pidx] = 0.0;
-            arrdata[PIdx::Bz][pidx] = 0.0;
-            arrdata[PIdx::ginv][pidx] = 0.0;
+            arrdata[PIdx::ux][pidx] = u[0];
+            arrdata[PIdx::uy][pidx] = u[1];
+            arrdata[PIdx::uz][pidx] = u[2];
 
             ++pidx;
           }
