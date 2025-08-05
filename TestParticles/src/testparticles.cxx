@@ -177,8 +177,8 @@ extern "C" void TestParticles_Init(CCTK_ARGUMENTS) {
               ++pidx;
             }
           });
-    }
-  }
+    } // for mfi
+  } // for patch
 }
 
 // extern "C" void TestParticles_Update(CCTK_ARGUMENTS) {
