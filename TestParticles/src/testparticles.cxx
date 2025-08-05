@@ -6,6 +6,9 @@
 
 #include <AMReX_Particles.H>
 
+namespace TestPaticles {
+using namespace amrex;
+
 struct PIdx {
   enum { ux = 0, uy, uz, nattribs };
 };
@@ -191,3 +194,5 @@ extern "C" void TestParticles_Init(CCTK_ARGUMENTS) {
 //   DECLARE_CCTK_PARAMETERS;
 //   DECLARE_CCTK_ARGUMENTSX_TestParticles_Update;
 // }
+
+} // namespace TestPaticles
