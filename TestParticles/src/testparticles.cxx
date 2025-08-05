@@ -50,7 +50,8 @@ extern "C" void TestParticles_Init(CCTK_ARGUMENTS) {
     const int lev = 0;
 
     const auto dx = pc.Geom(lev).CellSizeArray();
-    const auto plo = pc.Geom(lev).ProbLoArray();
+    const auto p_lo = pc.Geom(lev).ProbLoArray();
+    const auto p_hi = pc.Geom(lev).ProbHiArray();
 
     const int num_ppc = nppc[0] * nppc[1] * nppc[2];
     const Real scale_fac = dx[0] * dx[1] * dx[2] / num_ppc;
@@ -74,13 +75,12 @@ extern "C" void TestParticles_Init(CCTK_ARGUMENTS) {
 
               get_position_unit_cell(r, nppc, i_part);
 
-              Real x = plo[0] + (i + r[0]) * dx[0];
-              Real y = plo[1] + (j + r[1]) * dx[1];
-              Real z = plo[2] + (k + r[2]) * dx[2];
+              Real x = p_lo[0] + (i + r[0]) * dx[0];
+              Real y = p_lo[1] + (j + r[1]) * dx[1];
+              Real z = p_lo[2] + (k + r[2]) * dx[2];
 
-              if (x >= a_bounds.hi(0) || x < a_bounds.lo(0) ||
-                  y >= a_bounds.hi(1) || y < a_bounds.lo(1) ||
-                  z >= a_bounds.hi(2) || z < a_bounds.lo(2))
+              if (x >= p_hi[0] || x < p_lo[0] || y >= p_hi[1] || y < p_lo[1] ||
+                  z >= p_hi[2] || z < p_lo[2])
                 continue;
 
               int ix = i - lo.x;
@@ -142,17 +142,16 @@ extern "C" void TestParticles_Init(CCTK_ARGUMENTS) {
 
               get_position_unit_cell(r, nppc, i_part);
 
-              Real x = plo[0] + (i + r[0]) * dx[0];
-              Real y = plo[1] + (j + r[1]) * dx[1];
-              Real z = plo[2] + (k + r[2]) * dx[2];
+              Real x = p_lo[0] + (i + r[0]) * dx[0];
+              Real y = p_lo[1] + (j + r[1]) * dx[1];
+              Real z = p_lo[2] + (k + r[2]) * dx[2];
 
               u[0] = 0.01;
               u[1] = 0.0;
               u[2] = 0.0;
 
-              if (x >= a_bounds.hi(0) || x < a_bounds.lo(0) ||
-                  y >= a_bounds.hi(1) || y < a_bounds.lo(1) ||
-                  z >= a_bounds.hi(2) || z < a_bounds.lo(2))
+              if (x >= p_hi[0] || x < p_lo[0] || y >= p_hi[1] || y < p_lo[1] ||
+                  z >= p_hi[2] || z < p_lo[2])
                 continue;
 
               ParticleType &p = pstruct[pidx];
