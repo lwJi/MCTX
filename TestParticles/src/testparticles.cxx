@@ -13,8 +13,8 @@ struct PIdx {
   enum { ux = 0, uy, uz, nattribs };
 };
 
-CCTK_HOST CCTK_DEVICE void get_position_unit_cell(Real *r, const IntVect &nppc,
-                                                  int i_part) {
+CCTK_HOST CCTK_DEVICE void
+get_position_unit_cell(Real *r, const array<int, 3> &nppc, int i_part) {
   int nx = nppc[0];
   int ny = nppc[1];
   int nz = nppc[2];
@@ -43,6 +43,8 @@ get_gaussian_random_momentum(Real *u, Real u_mean, Real u_std,
 extern "C" void TestParticles_Init(CCTK_ARGUMENTS) {
   DECLARE_CCTK_PARAMETERS;
 
+  const array<int, 3> nppc{4, 4, 4};
+
   using Container = amrex::AmrParticleContainer<0, 0, PIdx::nattribs, 0>;
   using ParticleTile = Container::ParticleTileType;
   std::vector<Container> containers(ghext->num_patches());
@@ -58,9 +60,7 @@ extern "C" void TestParticles_Init(CCTK_ARGUMENTS) {
     const auto dx = geom.CellSizeArray();
     const auto plo = geom.ProbLoArray();
 
-    const int num_ppc =
-        AMREX_D_TERM(a_num_particles_per_cell[0], *a_num_particles_per_cell[1],
-                     *a_num_particles_per_cell[2]);
+    const int num_ppc = nppc[0] * nppc[1] * nppc[2];
     const Real scale_fac = dx[0] * dx[1] * dx[2] / num_ppc;
 
     for (MFIter mfi = MakeMFIter(lev); mfi.isValid(); ++mfi) {
@@ -80,7 +80,7 @@ extern "C" void TestParticles_Init(CCTK_ARGUMENTS) {
             for (int i_part = 0; i_part < num_ppc; i_part++) {
               Real r[3];
 
-              get_position_unit_cell(r, a_num_particles_per_cell, i_part);
+              get_position_unit_cell(r, nppc, i_part);
 
               Real x = plo[0] + (i + r[0]) * dx[0];
               Real y = plo[1] + (j + r[1]) * dx[1];
@@ -148,7 +148,7 @@ extern "C" void TestParticles_Init(CCTK_ARGUMENTS) {
               Real r[3];
               Real u[3];
 
-              get_position_unit_cell(r, a_num_particles_per_cell, i_part);
+              get_position_unit_cell(r, nppc, i_part);
 
               Real x = plo[0] + (i + r[0]) * dx[0];
               Real y = plo[1] + (j + r[1]) * dx[1];
