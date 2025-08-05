@@ -102,7 +102,7 @@ extern "C" void TestParticles_Init(CCTK_ARGUMENTS) {
       int num_to_add =
           offsets[tile_box.numPts() - 1] + counts[tile_box.numPts() - 1];
 
-      auto &particles = GetParticles(lev);
+      auto &particles = pc.GetParticles(lev);
       auto &particle_tile =
           particles[std::make_pair(mfi.index(), mfi.LocalTileIndex())];
 
@@ -113,7 +113,7 @@ extern "C" void TestParticles_Init(CCTK_ARGUMENTS) {
       if (num_to_add == 0)
         continue;
 
-      ParticleType *pstruct = particle_tile.GetArrayOfStructs()().data();
+      Container::ParticleType *pstruct = particle_tile.GetArrayOfStructs()().data();
 
       auto arrdata = particle_tile.GetStructOfArrays().realarray();
 
@@ -154,7 +154,7 @@ extern "C" void TestParticles_Init(CCTK_ARGUMENTS) {
                   z >= p_hi[2] || z < p_lo[2])
                 continue;
 
-              ParticleType &p = pstruct[pidx];
+              Container::ParticleType &p = pstruct[pidx];
               p.id() = pidx + 1;
               p.cpu() = procID;
               p.pos(0) = x;
