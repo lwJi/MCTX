@@ -4,10 +4,14 @@
 #include <cctk_Arguments.h>
 #include <cctk_Parameters.h>
 
+#include <AMReX_AmrParticles.H>
 #include <AMReX_Particles.H>
+
+#include "../../../CarpetX/CarpetX/src/driver.hxx"
 
 namespace TestPaticles {
 using namespace amrex;
+using namespace std;
 
 struct PIdx {
   enum { ux = 0, uy, uz, nattribs };
