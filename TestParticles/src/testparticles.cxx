@@ -40,12 +40,13 @@ get_gaussian_random_momentum(Real *u, Real u_mean, Real u_std,
   u[2] = u_mean + uz_th;
 }
 
-void InitParticles(const IntVect &a_num_particles_per_cell,
-                   const RealBox &a_bounds, const int a_problem) {
+void InitParticles(const Geometry &geom,
+                   const IntVect &a_num_particles_per_cell,
+                   const RealBox &a_bounds) {
 
   const int lev = 0;
-  const auto dx = Geom(lev).CellSizeArray();
-  const auto plo = Geom(lev).ProbLoArray();
+  const auto dx = geom(lev).CellSizeArray();
+  const auto plo = geom(lev).ProbLoArray();
 
   const int num_ppc =
       AMREX_D_TERM(a_num_particles_per_cell[0], *a_num_particles_per_cell[1],
@@ -179,13 +180,12 @@ extern "C" void TestParticles_Init(CCTK_ARGUMENTS) {
     const auto &restrict patchdata = ghext->patchdata.at(patch);
     containers.at(patch) = Container(patchdata.amrcore.get());
 
+    const amrex::Geometry &geom = ghext->patchdata.at(patch).amrcore->Geom;
+
     const int level = 0;
     const auto &restrict leveldata = patchdata.leveldata.at(level);
-    const amrex::MFIter mfi(*leveldata.fab);
-    assert(mfi.isValid());
 
-    ParticleTile &particle_tile = containers.at(patch).GetParticles(
-        level)[make_pair(mfi.index(), mfi.LocalTileIndex())];
+    InitParticles(geom, nppc, real_box);
   }
 }
 
