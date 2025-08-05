@@ -41,8 +41,6 @@ get_gaussian_random_momentum(Real *u, Real u_mean, Real u_std,
 }
 
 void InitParticles(const IntVect &a_num_particles_per_cell,
-                   const Real a_thermal_momentum_std,
-                   const Real a_thermal_momentum_mean, const Real a_density,
                    const RealBox &a_bounds, const int a_problem) {
 
   const int lev = 0;
@@ -144,16 +142,9 @@ void InitParticles(const IntVect &a_num_particles_per_cell,
             Real y = plo[1] + (j + r[1]) * dx[1];
             Real z = plo[2] + (k + r[2]) * dx[2];
 
-            if (a_problem == 0) {
-              get_gaussian_random_momentum(u, a_thermal_momentum_mean,
-                                           a_thermal_momentum_std, engine);
-            } else if (a_problem == 1) {
-              u[0] = 0.01;
-              u[1] = 0.0;
-              u[2] = 0.0;
-            } else {
-              amrex::Abort("problem type not valid");
-            }
+            u[0] = 0.01;
+            u[1] = 0.0;
+            u[2] = 0.0;
 
             if (x >= a_bounds.hi(0) || x < a_bounds.lo(0) ||
                 y >= a_bounds.hi(1) || y < a_bounds.lo(1) ||
@@ -170,14 +161,6 @@ void InitParticles(const IntVect &a_num_particles_per_cell,
             arrdata[PIdx::ux][pidx] = u[0] * PhysConst::c;
             arrdata[PIdx::uy][pidx] = u[1] * PhysConst::c;
             arrdata[PIdx::uz][pidx] = u[2] * PhysConst::c;
-            arrdata[PIdx::w][pidx] = a_density * scale_fac;
-            arrdata[PIdx::Ex][pidx] = 0.0;
-            arrdata[PIdx::Ey][pidx] = 0.0;
-            arrdata[PIdx::Ez][pidx] = 0.0;
-            arrdata[PIdx::Bx][pidx] = 0.0;
-            arrdata[PIdx::By][pidx] = 0.0;
-            arrdata[PIdx::Bz][pidx] = 0.0;
-            arrdata[PIdx::ginv][pidx] = 0.0;
 
             ++pidx;
           }
