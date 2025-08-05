@@ -6,17 +6,12 @@
 
 #include <AMReX_Particles.H>
 
-struct PIdx
-{
-    enum {
-        ux = 0,
-        uy, uz,
-        nattribs
-    };
+struct PIdx {
+  enum { ux = 0, uy, uz, nattribs };
 };
 
-CCTK_HOST CCTK_DEVICE void
-get_position_unit_cell(Real *r, const array<int, 3> &nppc, int i_part) {
+AMREX_GPU_HOST_DEVICE void get_position_unit_cell(Real *r, const IntVect &nppc,
+                                                  int i_part) {
   int nx = nppc[0];
   int ny = nppc[1];
   int nz = nppc[2];
@@ -30,7 +25,7 @@ get_position_unit_cell(Real *r, const array<int, 3> &nppc, int i_part) {
   r[2] = (0.5 + iz_part) / nz;
 }
 
-CCTK_HOST CCTK_DEVICE void
+AMREX_GPU_HOST_DEVICE void
 get_gaussian_random_momentum(Real *u, Real u_mean, Real u_std,
                              amrex::RandomEngine const &engine) {
   Real ux_th = amrex::RandomNormal(0.0, u_std, engine);
@@ -44,6 +39,23 @@ get_gaussian_random_momentum(Real *u, Real u_mean, Real u_std,
 
 extern "C" void TestParticles_Init(CCTK_ARGUMENTS) {
   DECLARE_CCTK_PARAMETERS;
+
+  using Container = amrex::AmrParticleContainer<0, 0, PIdx::nattribs, 0>;
+  using ParticleTile = Container::ParticleTileType;
+  std::vector<Container> containers(ghext->num_patches());
+
+  for (int patch = 0; patch < ghext->num_patches(); ++patch) {
+    const auto &restrict patchdata = ghext->patchdata.at(patch);
+    containers.at(patch) = Container(patchdata.amrcore.get());
+
+    const int level = 0;
+    const auto &restrict leveldata = patchdata.leveldata.at(level);
+    const amrex::MFIter mfi(*leveldata.fab);
+    assert(mfi.isValid());
+
+    ParticleTile &particle_tile = containers.at(patch).GetParticles(
+        level)[make_pair(mfi.index(), mfi.LocalTileIndex())];
+  }
 
   const int lev = 0;
   const auto plo = Geom(lev).ProbLoArray();
