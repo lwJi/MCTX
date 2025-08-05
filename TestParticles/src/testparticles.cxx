@@ -51,12 +51,12 @@ extern "C" void TestParticles_Init(CCTK_ARGUMENTS) {
     const auto &restrict patchdata = ghext->patchdata.at(patch);
     containers.at(patch) = Container(patchdata.amrcore.get());
 
-    const amrex::Geometry &geom = ghext->patchdata.at(patch).amrcore->Geom;
-
     // Init Particles
     const int lev = 0;
-    const auto dx = geom(lev).CellSizeArray();
-    const auto plo = geom(lev).ProbLoArray();
+
+    const amrex::Geometry &geom = ghext->patchdata.at(patch).amrcore->Geom(lev);
+    const auto dx = geom.CellSizeArray();
+    const auto plo = geom.ProbLoArray();
 
     const int num_ppc =
         AMREX_D_TERM(a_num_particles_per_cell[0], *a_num_particles_per_cell[1],
