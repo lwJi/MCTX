@@ -44,7 +44,7 @@ extern "C" void TestParticles_Init(CCTK_ARGUMENTS) {
   for (int patch = 0; patch < ghext->num_patches(); ++patch) {
     const auto &restrict patchdata = ghext->patchdata.at(patch);
     containers.at(patch) = Container(patchdata.amrcore.get());
-    const auto &pc = containers.at(patch);
+    auto &pc = containers.at(patch);
 
     // Init Particles
     const int lev = 0;
@@ -113,7 +113,8 @@ extern "C" void TestParticles_Init(CCTK_ARGUMENTS) {
       if (num_to_add == 0)
         continue;
 
-      Container::ParticleType *pstruct = particle_tile.GetArrayOfStructs()().data();
+      Container::ParticleType *pstruct =
+          particle_tile.GetArrayOfStructs()().data();
 
       auto arrdata = particle_tile.GetStructOfArrays().realarray();
 
