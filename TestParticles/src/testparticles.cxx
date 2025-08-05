@@ -49,9 +49,8 @@ extern "C" void TestParticles_Init(CCTK_ARGUMENTS) {
     // Init Particles
     const int lev = 0;
 
-    const amrex::Geometry &geom = ghext->patchdata.at(patch).amrcore->Geom(lev);
-    const auto dx = geom.CellSizeArray();
-    const auto plo = geom.ProbLoArray();
+    const auto dx = pc.Geom(lev).CellSizeArray();
+    const auto plo = pc.Geom(lev).ProbLoArray();
 
     const int num_ppc = nppc[0] * nppc[1] * nppc[2];
     const Real scale_fac = dx[0] * dx[1] * dx[2] / num_ppc;
