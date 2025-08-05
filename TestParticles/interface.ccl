@@ -3,4 +3,3 @@
 IMPLEMENTS: TestParticles
 
 USES INCLUDE HEADER: loop_device.hxx
-
