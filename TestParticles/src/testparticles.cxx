@@ -28,18 +28,6 @@ get_position_unit_cell(Real *r, const array<int, 3> &nppc, int i_part) {
   r[2] = (0.5 + iz_part) / nz;
 }
 
-CCTK_HOST CCTK_DEVICE void
-get_gaussian_random_momentum(Real *u, Real u_mean, Real u_std,
-                             amrex::RandomEngine const &engine) {
-  Real ux_th = amrex::RandomNormal(0.0, u_std, engine);
-  Real uy_th = amrex::RandomNormal(0.0, u_std, engine);
-  Real uz_th = amrex::RandomNormal(0.0, u_std, engine);
-
-  u[0] = u_mean + ux_th;
-  u[1] = u_mean + uy_th;
-  u[2] = u_mean + uz_th;
-}
-
 extern "C" void TestParticles_Init(CCTK_ARGUMENTS) {
   DECLARE_CCTK_PARAMETERS;
 
@@ -170,9 +158,9 @@ extern "C" void TestParticles_Init(CCTK_ARGUMENTS) {
               p.pos(1) = y;
               p.pos(2) = z;
 
-              arrdata[PIdx::ux][pidx] = u[0] * PhysConst::c;
-              arrdata[PIdx::uy][pidx] = u[1] * PhysConst::c;
-              arrdata[PIdx::uz][pidx] = u[2] * PhysConst::c;
+              arrdata[PIdx::ux][pidx] = u[0];
+              arrdata[PIdx::uy][pidx] = u[1];
+              arrdata[PIdx::uz][pidx] = u[2];
 
               ++pidx;
             }
