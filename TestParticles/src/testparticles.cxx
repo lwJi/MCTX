@@ -44,6 +44,7 @@ extern "C" void TestParticles_Init(CCTK_ARGUMENTS) {
   for (int patch = 0; patch < ghext->num_patches(); ++patch) {
     const auto &restrict patchdata = ghext->patchdata.at(patch);
     containers.at(patch) = Container(patchdata.amrcore.get());
+    const auto &pc = containers.at(patch);
 
     // Init Particles
     const int lev = 0;
@@ -55,7 +56,7 @@ extern "C" void TestParticles_Init(CCTK_ARGUMENTS) {
     const int num_ppc = nppc[0] * nppc[1] * nppc[2];
     const Real scale_fac = dx[0] * dx[1] * dx[2] / num_ppc;
 
-    for (MFIter mfi = MakeMFIter(lev); mfi.isValid(); ++mfi) {
+    for (MFIter mfi = pc.MakeMFIter(lev); mfi.isValid(); ++mfi) {
       const Box &tile_box = mfi.tilebox();
 
       const auto lo = amrex::lbound(tile_box);
