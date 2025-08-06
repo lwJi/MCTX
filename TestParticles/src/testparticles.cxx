@@ -6,6 +6,7 @@
 
 #include <AMReX_AmrParticles.H>
 #include <AMReX_Particles.H>
+#include <AMReX_PlotFileUtil.H>
 
 #include "../../../CarpetX/CarpetX/src/driver.hxx"
 
@@ -171,6 +172,21 @@ extern "C" void TestParticles_Init(CCTK_ARGUMENTS) {
           });
     } // for mfi
   } // for patch
+
+  // IO
+  const int it = cctkGH->cctk_iteration;
+  const CCTK_REAL time = cctkGH->cctk_time;
+  const int numgroups = CCTK_NumGroups();
+
+  const std::string &plotfilename = amrex::Concatenate("plt", it);
+  amrex::Print() << "  Writing plotfile " << plotfilename << "\n";
+
+  for (int patch = 0; patch < ghext->num_patches(); ++patch) {
+    auto &pc = containers.at(patch);
+
+    pc.WriteAsciiFile(plotfilename);
+  } // for patch
+
 }
 
 // extern "C" void TestParticles_Update(CCTK_ARGUMENTS) {
