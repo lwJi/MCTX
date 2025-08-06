@@ -14,15 +14,7 @@ struct PIdx {
 
 using Container = amrex::AmrParticleContainer<0, 0, PIdx::nattribs, 0>;
 
-class NuParticleContainer {
-
-public:
-  NuParticleContainer();
-
-protected:
-  int m_species_id;
-  std::vector<Container> m_containers;
-};
+extern std::vector<Container> g_nupcs;
 
 } // namespace Particles
 
