@@ -1,0 +1,8 @@
+# Schedule definitions for thorn TestNuParticles
+
+schedule TestNuParticles_Init AT INITIAL
+{
+  LANG: C
+  OPTIONS: global
+} "initialize test particles"
+

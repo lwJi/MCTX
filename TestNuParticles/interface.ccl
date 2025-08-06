@@ -1,0 +1,5 @@
+# Interface definition for thorn TestNuParticles
+
+IMPLEMENTS: TestNuParticles
+
+USES INCLUDE HEADER: loop_device.hxx
