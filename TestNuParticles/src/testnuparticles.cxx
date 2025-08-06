@@ -12,7 +12,6 @@
 
 #include "../../../CarpetX/CarpetX/src/driver.hxx"
 
-
 namespace TestNuParticles {
 using namespace NuParticleContainer;
 using namespace amrex;
@@ -35,6 +34,19 @@ get_position_unit_cell(Real *r, const array<int, 3> &nppc, int i_part) {
   r[0] = (0.5 + ix_part) / nx;
   r[1] = (0.5 + iy_part) / ny;
   r[2] = (0.5 + iz_part) / nz;
+}
+
+CCTK_HOST void OutputParticles(const int it) {
+  const std::string &plotfilename = amrex::Concatenate("plt", it);
+  amrex::Print() << "  Writing plotfile " << plotfilename << "\n";
+
+  for (int patch = 0; patch < ghext->num_patches(); ++patch) {
+    auto &pc = g_nupcs.at(patch);
+
+    pc.WriteAsciiFile(plotfilename);
+
+    // pc.WritePlotFile(plotfilename, "us");
+  } // for patch
 }
 
 extern "C" void TestNuParticles_Init(CCTK_ARGUMENTS) {
@@ -174,20 +186,7 @@ extern "C" void TestNuParticles_Init(CCTK_ARGUMENTS) {
   } // for patch
 
   // IO
-  const int it = cctkGH->cctk_iteration;
-  const CCTK_REAL time = cctkGH->cctk_time;
-  const int numgroups = CCTK_NumGroups();
-
-  const std::string &plotfilename = amrex::Concatenate("plt", it);
-  amrex::Print() << "  Writing plotfile " << plotfilename << "\n";
-
-  for (int patch = 0; patch < ghext->num_patches(); ++patch) {
-    auto &pc = g_nupcs.at(patch);
-
-    pc.WriteAsciiFile(plotfilename);
-
-    // pc.WritePlotFile(plotfilename, "us");
-  } // for patch
+  OutputParticles(cctkGH->cctk_iteration);
 }
 
 // extern "C" void TestNuParticles_Update(CCTK_ARGUMENTS) {
