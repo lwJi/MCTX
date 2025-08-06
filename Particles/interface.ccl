@@ -1,0 +1,5 @@
+# Interface definition for thorn Particles
+
+IMPLEMENTS: Particles
+
+USES INCLUDE HEADER: loop_device.hxx
