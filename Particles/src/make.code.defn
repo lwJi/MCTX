@@ -1,7 +1,7 @@
 # Main make.code.defn file for thorn Particles
 
 # Source files in this directory
-SRCS = 
+SRCS = NuParticleContainer.cxx
 
 # Subdirectories containing source files
 SUBDIRS = 

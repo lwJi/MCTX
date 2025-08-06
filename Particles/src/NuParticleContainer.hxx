@@ -1,7 +1,10 @@
 #ifndef NUPARTICLECONTAINER_HXX
 #define NUPARTICLECONTAINER_HXX
 
+#include <AMReX_AmrParticles.H>
 #include <AMReX_Particles.H>
+
+#include "../../../CarpetX/CarpetX/src/driver.hxx"
 
 namespace Particles {
 
