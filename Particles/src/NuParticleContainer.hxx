@@ -13,6 +13,7 @@ struct PIdx {
 };
 
 using Container = amrex::AmrParticleContainer<0, 0, PIdx::nattribs, 0>;
+using ParticleTile = Container::ParticleTileType;
 
 extern std::vector<Container> g_nupcs;
 

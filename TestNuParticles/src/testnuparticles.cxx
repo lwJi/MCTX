@@ -54,8 +54,6 @@ extern "C" void TestNuParticles_Init(CCTK_ARGUMENTS) {
 
   const array<int, 3> nppc{4, 4, 4};
 
-  using ParticleTile = Container::ParticleTileType;
-
   for (int patch = 0; patch < ghext->num_patches(); ++patch) {
     auto &pc = g_nupcs.at(patch);
 
