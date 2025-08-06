@@ -6,7 +6,7 @@
 
 #include "../../../CarpetX/CarpetX/src/driver.hxx"
 
-namespace Particles {
+namespace NuParticleContainer {
 
 struct PIdx {
   enum { px = 0, py, pz, nattribs };
@@ -16,6 +16,6 @@ using Container = amrex::AmrParticleContainer<0, 0, PIdx::nattribs, 0>;
 
 extern std::vector<Container> g_nupcs;
 
-} // namespace Particles
+} // namespace NuParticleContainer
 
 #endif

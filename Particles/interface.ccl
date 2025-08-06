@@ -3,3 +3,5 @@
 IMPLEMENTS: Particles
 
 USES INCLUDE HEADER: loop_device.hxx
+
+INCLUDES HEADER: NuParticleContainer.hxx IN NuParticleContainer.hxx

@@ -8,9 +8,13 @@
 #include <AMReX_Particles.H>
 #include <AMReX_PlotFileUtil.H>
 
+#include <NuParticleContainer.hxx>
+
 #include "../../../CarpetX/CarpetX/src/driver.hxx"
 
-namespace TestPaticles {
+
+namespace TestNuParticles {
+using namespace NuParticleContainer;
 using namespace amrex;
 using namespace std;
 
@@ -38,14 +42,10 @@ extern "C" void TestNuParticles_Init(CCTK_ARGUMENTS) {
 
   const array<int, 3> nppc{4, 4, 4};
 
-  using Container = amrex::AmrParticleContainer<0, 0, PIdx::nattribs, 0>;
   using ParticleTile = Container::ParticleTileType;
-  std::vector<Container> containers(ghext->num_patches());
 
   for (int patch = 0; patch < ghext->num_patches(); ++patch) {
-    const auto &restrict patchdata = ghext->patchdata.at(patch);
-    containers.at(patch) = Container(patchdata.amrcore.get());
-    auto &pc = containers.at(patch);
+    auto &pc = g_nupcs.at(patch);
 
     // Init Particles
     const int lev = 0;
@@ -182,7 +182,7 @@ extern "C" void TestNuParticles_Init(CCTK_ARGUMENTS) {
   amrex::Print() << "  Writing plotfile " << plotfilename << "\n";
 
   for (int patch = 0; patch < ghext->num_patches(); ++patch) {
-    auto &pc = containers.at(patch);
+    auto &pc = g_nupcs.at(patch);
 
     pc.WriteAsciiFile(plotfilename);
 
@@ -195,4 +195,4 @@ extern "C" void TestNuParticles_Init(CCTK_ARGUMENTS) {
 //   DECLARE_CCTK_ARGUMENTSX_TestNuParticles_Update;
 // }
 
-} // namespace TestPaticles
+} // namespace TestNuParticles

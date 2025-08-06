@@ -1,7 +1,7 @@
 
 #include "NuParticleContainer.hxx"
 
-namespace Particles {
+namespace NuParticleContainer {
 
 std::vector<Container> g_nupcs;
 
@@ -14,4 +14,4 @@ extern "C" void NuParticleContainer_Setup(CCTK_ARGUMENTS) {
   } // for patch
 }
 
-} // namespace Particles
+} // namespace NuParticleContainer
