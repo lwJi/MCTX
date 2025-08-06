@@ -184,9 +184,9 @@ extern "C" void TestParticles_Init(CCTK_ARGUMENTS) {
   for (int patch = 0; patch < ghext->num_patches(); ++patch) {
     auto &pc = containers.at(patch);
 
-    // pc.WriteAsciiFile(plotfilename);
+    pc.WriteAsciiFile(plotfilename);
 
-    pc.WritePlotFile(plotfilename, "us");
+    // pc.WritePlotFile(plotfilename, "us");
   } // for patch
 }
 
