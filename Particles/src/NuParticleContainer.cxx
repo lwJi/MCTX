@@ -1,4 +1,3 @@
-
 #include "NuParticleContainer.hxx"
 
 namespace NuParticleContainer {
