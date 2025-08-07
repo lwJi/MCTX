@@ -15,31 +15,37 @@ struct PIdx {
 using Container = amrex::AmrParticleContainer<0, 0, PIdx::nattribs, 0>;
 using ParticleTile = Container::ParticleTileType;
 
+class NuParIter : public amrex::ParIter<0, 0, PIdx::nattribs, 0> {
+public:
+  using amrex::ParIter<0, 0, PIdx::nattribs, 0>::ParIter;
+
+  //    NuParIter (ContainerType& pc, int level);
+
+  const std::array<RealVector, PIdx::nattribs> &GetAttribs() const {
+    return GetStructOfArrays().GetRealData();
+  }
+
+  std::array<RealVector, PIdx::nattribs> &GetAttribs() {
+    return GetStructOfArrays().GetRealData();
+  }
+
+  const RealVector &GetAttribs(int comp) const {
+    return GetStructOfArrays().GetRealData(comp);
+  }
+
+  RealVector &GetAttribs(int comp) {
+    return GetStructOfArrays().GetRealData(comp);
+  }
+};
+
 class NuParticleContainer : public Container {
 
 public:
   NuParticleContainer(amrex::AmrCore *amr_core);
 
-  // void InitParticles(const amrex::IntVect &a_num_particles_per_cell,
-  //                    const amrex::Real a_thermal_momentum_std,
-  //                    const amrex::Real a_thermal_momentum_mean,
-  //                    const amrex::Real a_density,
-  //                    const amrex::RealBox &a_bounds, const int a_problem);
+  void PushAndDeposeParticles(CCTK_REAL dt);
 
-  // void
-  // PushAndDeposeParticles(const amrex::MultiFab &Ex, const amrex::MultiFab
-  // &Ey,
-  //                        const amrex::MultiFab &Ez, const amrex::MultiFab
-  //                        &Bx, const amrex::MultiFab &By, const
-  //                        amrex::MultiFab &Bz, amrex::MultiFab &jx,
-  //                        amrex::MultiFab &jy, amrex::MultiFab &jz,
-  //                        amrex::Real dt);
-
-  // void PushParticleMomenta(const amrex::MultiFab &Ex, const amrex::MultiFab
-  // &Ey,
-  //                          const amrex::MultiFab &Ez, const amrex::MultiFab
-  //                          &Bx, const amrex::MultiFab &By, const
-  //                          amrex::MultiFab &Bz, amrex::Real dt);
+  void PushParticleMomenta();
 
   // void RedistributeLocal() {
   //   const int lev_min = 0;
