@@ -158,9 +158,11 @@ extern "C" void TestNuParticles_Init(CCTK_ARGUMENTS) {
               Real y = p_lo[1] + (j + r[1]) * dx[1];
               Real z = p_lo[2] + (k + r[2]) * dx[2];
 
-              u[0] = 0.01;
-              u[1] = 0.0;
-              u[2] = 0.0;
+              Real rad = std::sqrt(x * x + y * y + z * z);
+
+              u[0] = 0.1 * x / rad;
+              u[1] = 0.1 * y / rad;
+              u[2] = 0.1 * z / rad;
 
               if (x >= p_hi[0] || x < p_lo[0] || y >= p_hi[1] || y < p_lo[1] ||
                   z >= p_hi[2] || z < p_lo[2])
