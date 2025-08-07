@@ -1,6 +1,6 @@
 # Schedule definitions for thorn Particles
 
-SCHEDULE NuParticleContainer_Setup AT initial
+SCHEDULE NuParticleContainers_Setup AT initial
 {
   LANG: C
   OPTIONS: global

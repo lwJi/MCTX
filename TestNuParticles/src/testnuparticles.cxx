@@ -8,12 +8,12 @@
 #include <AMReX_Particles.H>
 #include <AMReX_PlotFileUtil.H>
 
-#include <NuParticleContainer.hxx>
+#include <NuParticleContainers.hxx>
 
 #include "../../../CarpetX/CarpetX/src/driver.hxx"
 
 namespace TestNuParticles {
-using namespace NuParticleContainer;
+using namespace NuParticleContainers;
 using namespace amrex;
 using namespace std;
 

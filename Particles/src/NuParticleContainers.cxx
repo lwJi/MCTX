@@ -1,10 +1,10 @@
-#include "NuParticleContainer.hxx"
+#include "NuParticleContainers.hxx"
 
-namespace NuParticleContainer {
+namespace NuParticleContainers {
 
 std::vector<Container> g_nupcs;
 
-extern "C" void NuParticleContainer_Setup(CCTK_ARGUMENTS) {
+extern "C" void NuParticleContainers_Setup(CCTK_ARGUMENTS) {
   DECLARE_CCTK_PARAMETERS;
 
   for (int patch = 0; patch < CarpetX::ghext->num_patches(); ++patch) {
@@ -13,4 +13,4 @@ extern "C" void NuParticleContainer_Setup(CCTK_ARGUMENTS) {
   } // for patch
 }
 
-} // namespace NuParticleContainer
+} // namespace NuParticleContainers
