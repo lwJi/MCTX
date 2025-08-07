@@ -1,8 +1,13 @@
 # Schedule definitions for thorn TestNuParticles
 
-schedule TestNuParticles_Init AT INITIAL
+SCHEDULE TestNuParticles_Init AT initial
 {
   LANG: C
   OPTIONS: global
-} "initialize test particles"
+} "Initialize test neutrino particles"
 
+SCHEDULE TestNuParticles_PushAndDeposeParticles AT evol
+{
+  LANG: C
+  OPTIONS: global
+} "Initialize test neutrino particles"

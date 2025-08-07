@@ -187,9 +187,19 @@ extern "C" void TestNuParticles_Init(CCTK_ARGUMENTS) {
   OutputParticles(cctkGH->cctk_iteration);
 }
 
-// extern "C" void TestNuParticles_Update(CCTK_ARGUMENTS) {
-//   DECLARE_CCTK_PARAMETERS;
-//   DECLARE_CCTK_ARGUMENTSX_TestNuParticles_Update;
-// }
+extern "C" void TestNuParticles_PushAndDeposeParticles(CCTK_ARGUMENTS) {
+  DECLARE_CCTK_PARAMETERS;
+  DECLARE_CCTK_ARGUMENTS;
+
+  const CCTK_REAL dt = CCTK_DELTA_TIME;
+
+  for (int patch = 0; patch < ghext->num_patches(); ++patch) {
+    auto &pc = g_nupcs.at(patch);
+    pc->PushAndDeposeParticles(dt);
+  } // for patch
+
+  // IO
+  OutputParticles(cctkGH->cctk_iteration);
+}
 
 } // namespace TestNuParticles
