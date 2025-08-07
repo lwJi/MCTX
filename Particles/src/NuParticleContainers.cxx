@@ -15,6 +15,15 @@ push_position(NuParticleContainer::ParticleType &p, CCTK_REAL pxp,
   p.pos(2) += pzp * gaminv * dt;
 }
 
+CCTK_HOST CCTK_DEVICE CCTK_ATTRIBUTE_ALWAYS_INLINE inline void
+push_momentum(CCTK_REAL &pxp, CCTK_REAL &pyp, CCTK_REAL &pzp, CCTK_REAL pxp_rhs,
+              CCTK_REAL pyp_rhs, CCTK_REAL pzp_rhs, CCTK_REAL dt) {
+
+  pxp += pxp_rhs * dt;
+  pyp += pyp_rhs * dt;
+  pzp += pzp_rhs * dt;
+}
+
 void NuParticleContainer::PushAndDeposeParticles(CCTK_REAL dt) {
 
   const int lev = 0;
@@ -39,7 +48,7 @@ void NuParticleContainer::PushAndDeposeParticles(CCTK_REAL dt) {
       // gather_fields(pstruct[i], Exp, Eyp, Ezp, Bxp, Byp, Bzp, Exarr, Eyarr,
       //               Ezarr, Bxarr, Byarr, Bzarr, plo, dxi);
 
-      // push_momentum_boris(pxp[i], pyp[i], pzp[i], ginv, Exp, Eyp, Ezp, Bxp,
+      // push_momentum(pxp[i], pyp[i], pzp[i], ginv, Exp, Eyp, Ezp, Bxp,
       // Byp,
       //                     Bzp, q, m, dt);
 
@@ -48,6 +57,36 @@ void NuParticleContainer::PushAndDeposeParticles(CCTK_REAL dt) {
       // deposit_current(jxarr, jyarr, jzarr, pstruct[i], pxp[i], pyp[i],
       // pzp[i],
       //                 ginv, wp[i], q, dt, plo, dxi);
+    });
+  }
+}
+
+void NuParticleContainer::PushParticleMomenta(CCTK_REAL dt) {
+
+  const int lev = 0;
+
+  // const auto dxi = Geom(lev).InvCellSizeArray();
+  const auto plo = Geom(lev).ProbLoArray();
+
+  for (NuParIter pti(*this, lev); pti.isValid(); ++pti) {
+    const int np = pti.numParticles();
+
+    ParticleType const *AMREX_RESTRICT pstruct = &(pti.GetArrayOfStructs()[0]);
+
+    auto &attribs = pti.GetAttribs();
+    CCTK_REAL *AMREX_RESTRICT pxp = attribs[PIdx::px].data();
+    CCTK_REAL *AMREX_RESTRICT pyp = attribs[PIdx::py].data();
+    CCTK_REAL *AMREX_RESTRICT pzp = attribs[PIdx::pz].data();
+
+    AMREX_PARALLEL_FOR_1D(np, i, {
+      CCTK_REAL pxp_rhs = 0;
+      CCTK_REAL pyp_rhs = 0;
+      CCTK_REAL pzp_rhs = 0;
+
+      // gather_fields(pstruct[i], Exp, Eyp, Ezp, Bxp, Byp, Bzp, Exarr, Eyarr,
+      //               Ezarr, Bxarr, Byarr, Bzarr, plo, dxi);
+
+      push_momentum(pxp[i], pyp[i], pzp[i], pxp_rhs, pyp_rhs, pzp_rhs, dt);
     });
   }
 }

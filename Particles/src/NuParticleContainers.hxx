@@ -45,7 +45,7 @@ public:
 
   void PushAndDeposeParticles(CCTK_REAL dt);
 
-  void PushParticleMomenta();
+  void PushParticleMomenta(CCTK_REAL dt);
 
   // void RedistributeLocal() {
   //   const int lev_min = 0;
