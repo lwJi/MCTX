@@ -43,9 +43,9 @@ CCTK_HOST void OutputParticles(const int it) {
   for (int patch = 0; patch < ghext->num_patches(); ++patch) {
     auto &pc = g_nupcs.at(patch);
 
-    pc.WriteAsciiFile(plotfilename);
+    pc->WriteAsciiFile(plotfilename);
 
-    // pc.WritePlotFile(plotfilename, "us");
+    // pc->WritePlotFile(plotfilename, "us");
   } // for patch
 }
 
@@ -60,14 +60,14 @@ extern "C" void TestNuParticles_Init(CCTK_ARGUMENTS) {
     // Init Particles
     const int lev = 0;
 
-    const auto dx = pc.Geom(lev).CellSizeArray();
-    const auto p_lo = pc.Geom(lev).ProbLoArray();
-    const auto p_hi = pc.Geom(lev).ProbHiArray();
+    const auto dx = pc->Geom(lev).CellSizeArray();
+    const auto p_lo = pc->Geom(lev).ProbLoArray();
+    const auto p_hi = pc->Geom(lev).ProbHiArray();
 
     const int num_ppc = nppc[0] * nppc[1] * nppc[2];
     const Real scale_fac = dx[0] * dx[1] * dx[2] / num_ppc;
 
-    for (MFIter mfi = pc.MakeMFIter(lev); mfi.isValid(); ++mfi) {
+    for (MFIter mfi = pc->MakeMFIter(lev); mfi.isValid(); ++mfi) {
       const Box &tile_box = mfi.tilebox();
 
       const auto lo = amrex::lbound(tile_box);
@@ -113,7 +113,7 @@ extern "C" void TestNuParticles_Init(CCTK_ARGUMENTS) {
       int num_to_add =
           offsets[tile_box.numPts() - 1] + counts[tile_box.numPts() - 1];
 
-      auto &particles = pc.GetParticles(lev);
+      auto &particles = pc->GetParticles(lev);
       auto &particle_tile =
           particles[std::make_pair(mfi.index(), mfi.LocalTileIndex())];
 
