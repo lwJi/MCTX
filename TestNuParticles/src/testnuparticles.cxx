@@ -90,8 +90,10 @@ extern "C" void TestNuParticles_Init(CCTK_ARGUMENTS) {
               Real y = p_lo[1] + (j + r[1]) * dx[1];
               Real z = p_lo[2] + (k + r[2]) * dx[2];
 
+              Real rad = std::sqrt(x * x + y * y + z * z);
+
               if (x >= p_hi[0] || x < p_lo[0] || y >= p_hi[1] || y < p_lo[1] ||
-                  z >= p_hi[2] || z < p_lo[2])
+                  z >= p_hi[2] || z < p_lo[2] || rad > 1.0)
                 continue;
 
               int ix = i - lo.x;
@@ -152,7 +154,10 @@ extern "C" void TestNuParticles_Init(CCTK_ARGUMENTS) {
               Real r[3];
               Real u[3];
 
-              get_position_unit_cell(r, nppc, i_part);
+              // get_position_unit_cell(r, nppc, i_part);
+              r[0] = Random(engine);
+              r[1] = Random(engine);
+              r[2] = Random(engine);
 
               Real x = p_lo[0] + (i + r[0]) * dx[0];
               Real y = p_lo[1] + (j + r[1]) * dx[1];
@@ -165,7 +170,7 @@ extern "C" void TestNuParticles_Init(CCTK_ARGUMENTS) {
               u[2] = 0.1 * z / rad;
 
               if (x >= p_hi[0] || x < p_lo[0] || y >= p_hi[1] || y < p_lo[1] ||
-                  z >= p_hi[2] || z < p_lo[2])
+                  z >= p_hi[2] || z < p_lo[2] || rad > 1.0)
                 continue;
 
               Container::ParticleType &p = pstruct[pidx];
