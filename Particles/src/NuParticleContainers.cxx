@@ -1,4 +1,5 @@
 #include "NuParticleContainers.hxx"
+#include "../wolfram/derivsinline.hxx"
 
 namespace NuParticleContainers {
 
