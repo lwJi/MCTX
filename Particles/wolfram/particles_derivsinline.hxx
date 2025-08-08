@@ -1,15 +1,15 @@
-/* derivsinline.hxx */
+/* particles_derivsinline.hxx */
 /* Produced with Generato */
 
-#ifndef DERIVSINLINE_HXX
-#define DERIVSINLINE_HXX
+#ifndef PARTICLES_DERIVSINLINE_HXX
+#define PARTICLES_DERIVSINLINE_HXX
 
 #include <loop_device.hxx>
 
 #include <array>
 #include <cmath>
 
-#include "powerinline.hxx"
+#include "particles_powerinline.hxx"
 
 namespace Particles {
 using namespace Loop;
@@ -64,6 +64,6 @@ fd_1_o8(amrex::Array4<T const> const &gf, int i, int j, int k, int comp, amrex::
 
 } // namespace Particles
 
-#endif // #ifndef DERIVSINLINE_HXX
+#endif // #ifndef PARTICLES_DERIVSINLINE_HXX
 
-/* derivsinline.hxx */
+/* particles_derivsinline.hxx */

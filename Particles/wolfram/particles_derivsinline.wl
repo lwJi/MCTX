@@ -1,6 +1,6 @@
 (* ::Package:: *)
 
-(* derivsinline.wl *)
+(* particles_derivsinline.wl *)
 
 (* (c) Liwei Ji, 02/2025 *)
 
@@ -62,7 +62,7 @@ PrintFDExpressionAMReX[accuracyOrd_?IntegerQ, fdOrd_?IntegerQ, strIdx_?StringQ] 
 (* Print to Files *)
 (******************)
 
-SetOutputFile[FileNameJoin[{Directory[], "derivsinline.hxx"}]];
+SetOutputFile[FileNameJoin[{Directory[], "particles_derivsinline.hxx"}]];
 
 SetMainPrint[
   pr["#include <loop_device.hxx>"];
@@ -70,7 +70,7 @@ SetMainPrint[
   pr["#include <array>"];
   pr["#include <cmath>"];
   pr[];
-  pr["#include \"powerinline.hxx\""];
+  pr["#include \"particles_powerinline.hxx\""];
   pr[];
 
   pr["namespace Particles {"];
