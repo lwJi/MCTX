@@ -53,9 +53,16 @@ extern "C" void TestNuParticles_InitFields(CCTK_ARGUMENTS) {
   grid.loop_all_device<0, 0, 0>(grid.nghostzones,
                                 [=] CCTK_DEVICE(const PointDesc &p)
                                     CCTK_ATTRIBUTE_ALWAYS_INLINE {
-                                      dalpx(p.I) = 1.0;
-                                      dalpy(p.I) = 2.0;
-                                      dalpz(p.I) = 3.0;
+                                      alp(p.I) = 1.0;
+                                      betax(p.I) = 0.0;
+                                      betay(p.I) = 0.0;
+                                      betaz(p.I) = 0.0;
+                                      gxx(p.I) = 1.0;
+                                      gxy(p.I) = 0.0;
+                                      gxz(p.I) = 0.0;
+                                      gyy(p.I) = 1.0;
+                                      gyz(p.I) = 0.0;
+                                      gzz(p.I) = 1.0;
                                     });
 }
 
@@ -211,8 +218,12 @@ extern "C" void TestNuParticles_PushAndDeposeParticles(CCTK_ARGUMENTS) {
   const CCTK_REAL dt = CCTK_DELTA_TIME;
 
   const int tl = 0;
-  const int gi_dalp = CCTK_GroupIndex("Particles::dalp");
-  assert(gi_dalp >= 0);
+  const int gi_lapse = CCTK_GroupIndex("ADMBaseX::lapse");
+  const int gi_shift = CCTK_GroupIndex("ADMBaseX::shift");
+  const int gi_met3d = CCTK_GroupIndex("ADMBaseX::metric");
+  assert(gi_lapse >= 0);
+  assert(gi_shift >= 0);
+  assert(gi_met3d >= 0);
 
   for (int patch = 0; patch < ghext->num_patches(); ++patch) {
     auto &pc = g_nupcs.at(patch);
@@ -220,10 +231,14 @@ extern "C" void TestNuParticles_PushAndDeposeParticles(CCTK_ARGUMENTS) {
     auto &pd = ghext->patchdata.at(patch);
     for (int lev = 0; lev < pd.leveldata.size(); ++lev) {
       const auto &ld = pd.leveldata.at(lev);
-      const auto &gd_dalp = *ld.groupdata.at(gi_dalp);
-      const amrex::MultiFab &dalp = *gd_dalp.mfab[tl];
+      const auto &gd_lapse = *ld.groupdata.at(gi_lapse);
+      const auto &gd_shift = *ld.groupdata.at(gi_shift);
+      const auto &gd_met3d = *ld.groupdata.at(gi_met3d);
+      const amrex::MultiFab &lapse = *gd_lapse.mfab[tl];
+      const amrex::MultiFab &shift = *gd_shift.mfab[tl];
+      const amrex::MultiFab &met3d = *gd_met3d.mfab[tl];
 
-      pc->PushParticleMomenta(dalp, dt, lev);
+      pc->PushParticleMomenta(lapse, shift, met3d, dt, lev);
       pc->PushAndDeposeParticles(dt, lev);
     }
 

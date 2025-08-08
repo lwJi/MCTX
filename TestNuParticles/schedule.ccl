@@ -4,7 +4,9 @@ SCHEDULE TestNuParticles_InitFields AT initial
 {
   LANG: C
   OPTIONS: local
-  WRITES: Particles::dalp(everywhere)
+  WRITES: ADMBaseX::lapse(everywhere)
+  WRITES: ADMBaseX::shift(everywhere)
+  WRITES: ADMBaseX::metric(everywhere)
 } "Initialize metric fields"
 
 SCHEDULE TestNuParticles_InitParticles AT initial

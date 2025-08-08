@@ -45,7 +45,9 @@ public:
 
   void PushAndDeposeParticles(CCTK_REAL dt, const int lev);
 
-  void PushParticleMomenta(const amrex::MultiFab &dalp_arr, CCTK_REAL dt,
+  void PushParticleMomenta(const amrex::MultiFab &lapse,
+                           const amrex::MultiFab &shift,
+                           const amrex::MultiFab &met3d, CCTK_REAL dt,
                            const int lev);
 
   // void RedistributeLocal() {

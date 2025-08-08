@@ -25,9 +25,11 @@ push_momentum(CCTK_REAL &pxp, CCTK_REAL &pyp, CCTK_REAL &pzp, CCTK_REAL pxp_rhs,
 }
 
 CCTK_HOST CCTK_DEVICE CCTK_ATTRIBUTE_ALWAYS_INLINE inline void
-gather_fields(NuParticleContainer::ParticleType const &p, CCTK_REAL &dalpx_p,
-              CCTK_REAL &dalpy_p, CCTK_REAL &dalpz_p,
-              amrex::Array4<CCTK_REAL const> const &dalp_arr,
+gather_fields(NuParticleContainer::ParticleType const &p, CCTK_REAL &pxp_rhs,
+              CCTK_REAL &pyp_rhs, CCTK_REAL &pzp_rhs,
+              amrex::Array4<CCTK_REAL const> const &alpha_arr,
+              amrex::Array4<CCTK_REAL const> const &shift_arr,
+              amrex::Array4<CCTK_REAL const> const &met3d_arr,
               amrex::GpuArray<CCTK_REAL, AMREX_SPACEDIM> const &plo,
               amrex::GpuArray<CCTK_REAL, AMREX_SPACEDIM> const &dxi) {
 
@@ -48,21 +50,25 @@ gather_fields(NuParticleContainer::ParticleType const &p, CCTK_REAL &dalpx_p,
   CCTK_REAL sy[] = {1. - yint, yint};
   CCTK_REAL sz[] = {1. - zint, zint};
 
-  dalpx_p = 0.;
-  dalpy_p = 0.;
-  dalpz_p = 0.;
+  CCTK_REAL betax_p = 0.;
+  CCTK_REAL betay_p = 0.;
+  CCTK_REAL betaz_p = 0.;
   for (int ll = 0; ll <= 1; ++ll) {
     for (int kk = 0; kk <= 1; ++kk) {
       for (int jj = 0; jj <= 1; ++jj) {
-        dalpx_p +=
-            sx[jj] * sy[kk] * sz[ll] * dalp_arr(j + jj, k + kk, l + ll, 0);
-        dalpy_p +=
-            sx[jj] * sy[kk] * sz[ll] * dalp_arr(j + jj, k + kk, l + ll, 1);
-        dalpz_p +=
-            sx[jj] * sy[kk] * sz[ll] * dalp_arr(j + jj, k + kk, l + ll, 2);
+        betax_p +=
+            sx[jj] * sy[kk] * sz[ll] * shift_arr(j + jj, k + kk, l + ll, 0);
+        betay_p +=
+            sx[jj] * sy[kk] * sz[ll] * shift_arr(j + jj, k + kk, l + ll, 1);
+        betaz_p +=
+            sx[jj] * sy[kk] * sz[ll] * shift_arr(j + jj, k + kk, l + ll, 2);
       }
     }
   }
+
+  pxp_rhs = 0.;
+  pyp_rhs = 0.;
+  pzp_rhs = 0.;
 }
 
 void NuParticleContainer::PushAndDeposeParticles(CCTK_REAL dt, const int lev) {
@@ -100,7 +106,9 @@ void NuParticleContainer::PushAndDeposeParticles(CCTK_REAL dt, const int lev) {
   }
 }
 
-void NuParticleContainer::PushParticleMomenta(const amrex::MultiFab &dalp,
+void NuParticleContainer::PushParticleMomenta(const amrex::MultiFab &lapse,
+                                              const amrex::MultiFab &shift,
+                                              const amrex::MultiFab &met3d,
                                               CCTK_REAL dt, const int lev) {
 
   const auto dxi = Geom(lev).InvCellSizeArray();
@@ -116,18 +124,17 @@ void NuParticleContainer::PushParticleMomenta(const amrex::MultiFab &dalp,
     CCTK_REAL *AMREX_RESTRICT pyp = attribs[PIdx::py].data();
     CCTK_REAL *AMREX_RESTRICT pzp = attribs[PIdx::pz].data();
 
-    auto const dalp_arr = dalp.array(pti);
+    auto const lapse_arr = lapse.array(pti);
+    auto const shift_arr = shift.array(pti);
+    auto const met3d_arr = met3d.array(pti);
 
     AMREX_PARALLEL_FOR_1D(np, i, {
       CCTK_REAL pxp_rhs = 0;
       CCTK_REAL pyp_rhs = 0;
       CCTK_REAL pzp_rhs = 0;
 
-      CCTK_REAL dalpx_p;
-      CCTK_REAL dalpy_p;
-      CCTK_REAL dalpz_p;
-
-      gather_fields(pstruct[i], dalpx_p, dalpy_p, dalpz_p, dalp_arr, plo, dxi);
+      gather_fields(pstruct[i], pxp_rhs, pyp_rhs, pzp_rhs, lapse_arr, shift_arr,
+                    met3d_arr, plo, dxi);
 
       push_momentum(pxp[i], pyp[i], pzp[i], pxp_rhs, pyp_rhs, pzp_rhs, dt);
     });

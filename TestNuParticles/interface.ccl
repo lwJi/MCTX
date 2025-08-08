@@ -2,7 +2,7 @@
 
 IMPLEMENTS: TestNuParticles
 
-INHERITS: Particles
+INHERITS: ADMBaseX
 
 USES INCLUDE HEADER: loop_device.hxx
 
