@@ -27,9 +27,7 @@ push_momentum(CCTK_REAL &pxp, CCTK_REAL &pyp, CCTK_REAL &pzp, CCTK_REAL pxp_rhs,
 CCTK_HOST CCTK_DEVICE CCTK_ATTRIBUTE_ALWAYS_INLINE inline void
 gather_fields(NuParticleContainer::ParticleType const &p, CCTK_REAL &dalpx_p,
               CCTK_REAL &dalpy_p, CCTK_REAL &dalpz_p,
-              amrex::Array4<CCTK_REAL const> const &dalpx_arr,
-              amrex::Array4<CCTK_REAL const> const &dalpy_arr,
-              amrex::Array4<CCTK_REAL const> const &dalpz_arr,
+              amrex::Array4<CCTK_REAL const> const &dalp_arr,
               amrex::GpuArray<CCTK_REAL, AMREX_SPACEDIM> const &plo,
               amrex::GpuArray<CCTK_REAL, AMREX_SPACEDIM> const &dxi) {
 
@@ -56,9 +54,12 @@ gather_fields(NuParticleContainer::ParticleType const &p, CCTK_REAL &dalpx_p,
   for (int ll = 0; ll <= 1; ++ll) {
     for (int kk = 0; kk <= 1; ++kk) {
       for (int jj = 0; jj <= 1; ++jj) {
-        dalpx_p += sx[jj] * sy[kk] * sz[ll] * dalpx_arr(j + jj, k + kk, l + ll);
-        dalpy_p += sx[jj] * sy[kk] * sz[ll] * dalpy_arr(j + jj, k + kk, l + ll);
-        dalpz_p += sx[jj] * sy[kk] * sz[ll] * dalpz_arr(j + jj, k + kk, l + ll);
+        dalpx_p +=
+            sx[jj] * sy[kk] * sz[ll] * dalp_arr(j + jj, k + kk, l + ll, 0);
+        dalpy_p +=
+            sx[jj] * sy[kk] * sz[ll] * dalp_arr(j + jj, k + kk, l + ll, 1);
+        dalpz_p +=
+            sx[jj] * sy[kk] * sz[ll] * dalp_arr(j + jj, k + kk, l + ll, 2);
       }
     }
   }
@@ -101,9 +102,7 @@ void NuParticleContainer::PushAndDeposeParticles(CCTK_REAL dt) {
   }
 }
 
-void NuParticleContainer::PushParticleMomenta(const amrex::MultiFab &dalpx,
-                                              const amrex::MultiFab &dalpy,
-                                              const amrex::MultiFab &dalpz,
+void NuParticleContainer::PushParticleMomenta(const amrex::MultiFab &dalp,
                                               CCTK_REAL dt) {
 
   const int lev = 0;
@@ -121,9 +120,7 @@ void NuParticleContainer::PushParticleMomenta(const amrex::MultiFab &dalpx,
     CCTK_REAL *AMREX_RESTRICT pyp = attribs[PIdx::py].data();
     CCTK_REAL *AMREX_RESTRICT pzp = attribs[PIdx::pz].data();
 
-    auto const dalpx_arr = dalpx.array(pti);
-    auto const dalpy_arr = dalpy.array(pti);
-    auto const dalpz_arr = dalpz.array(pti);
+    auto const dalp_arr = dalp.array(pti);
 
     AMREX_PARALLEL_FOR_1D(np, i, {
       CCTK_REAL pxp_rhs = 0;
@@ -134,8 +131,7 @@ void NuParticleContainer::PushParticleMomenta(const amrex::MultiFab &dalpx,
       CCTK_REAL dalpy_p;
       CCTK_REAL dalpz_p;
 
-      gather_fields(pstruct[i], dalpx_p, dalpy_p, dalpz_p, dalpx_arr, dalpy_arr,
-                    dalpz_arr, plo, dxi);
+      gather_fields(pstruct[i], dalpx_p, dalpy_p, dalpz_p, dalp_arr, plo, dxi);
 
       push_momentum(pxp[i], pyp[i], pzp[i], pxp_rhs, pyp_rhs, pzp_rhs, dt);
     });

@@ -5,3 +5,5 @@ IMPLEMENTS: Particles
 USES INCLUDE HEADER: loop_device.hxx
 
 INCLUDES HEADER: NuParticleContainers.hxx IN NuParticleContainers.hxx
+
+CCTK_REAL dalp TYPE=gf TAGS='checkpoint="no"' { dalpx dalpy dalpz } "Spatial derivative of ADM lapse function"

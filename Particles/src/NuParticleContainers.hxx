@@ -45,9 +45,7 @@ public:
 
   void PushAndDeposeParticles(CCTK_REAL dt);
 
-  void PushParticleMomenta(const amrex::MultiFab &dalpx_arr,
-                           const amrex::MultiFab &dalpy_arr,
-                           const amrex::MultiFab &dalpz_arr, CCTK_REAL dt);
+  void PushParticleMomenta(const amrex::MultiFab &dalp_arr, CCTK_REAL dt);
 
   // void RedistributeLocal() {
   //   const int lev_min = 0;
