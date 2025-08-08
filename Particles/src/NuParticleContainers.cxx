@@ -3,6 +3,8 @@
 
 namespace NuParticleContainers {
 
+using namespace Particles;
+
 std::vector<std::unique_ptr<NuParticleContainer>> g_nupcs;
 
 NuParticleContainer::NuParticleContainer(amrex::AmrCore *amr_core)
@@ -23,6 +25,16 @@ push_momentum(CCTK_REAL &pxp, CCTK_REAL &pyp, CCTK_REAL &pzp, CCTK_REAL pxp_rhs,
   pxp += pxp_rhs * dt;
   pyp += pyp_rhs * dt;
   pzp += pzp_rhs * dt;
+}
+
+template <typename T>
+CCTK_HOST CCTK_DEVICE CCTK_ATTRIBUTE_ALWAYS_INLINE inline void
+interp_derivs1st(std::array<T, 3> &dgf_p, amrex::Array4<T const> const &gf_,
+                 int j, int k, int l, int comp,
+                 amrex::GpuArray<CCTK_REAL, AMREX_SPACEDIM> const &dxi, T ws) {
+  dgf_p[0] += ws * fd_1_o2<0>(gf_, j, k, l, comp, dxi);
+  dgf_p[1] += ws * fd_1_o2<1>(gf_, j, k, l, comp, dxi);
+  dgf_p[2] += ws * fd_1_o2<2>(gf_, j, k, l, comp, dxi);
 }
 
 CCTK_HOST CCTK_DEVICE CCTK_ATTRIBUTE_ALWAYS_INLINE inline void
@@ -57,7 +69,7 @@ gather_fields(NuParticleContainer::ParticleType const &p, CCTK_REAL &pxp_rhs,
 
   std::array<CCTK_REAL, 3> dalp_p = {0};
   std::array<std::array<CCTK_REAL, 3>, 3> dbeta_p = {0};
-  std::array<std::array<CCTK_REAL, 6>, 3> dg_p = {0};
+  std::array<std::array<CCTK_REAL, 3>, 6> dg_p = {0};
 
   for (int ll = 0; ll <= 1; ++ll) {
     for (int kk = 0; kk <= 1; ++kk) {
@@ -68,14 +80,16 @@ gather_fields(NuParticleContainer::ParticleType const &p, CCTK_REAL &pxp_rhs,
         const CCTK_REAL ws = sx[jj] * sy[kk] * sz[ll];
 
         alp_p += ws * lapse_arr(j0, k0, l0, 0);
-        for (int c = 0; c < beta_p.size(); ++c) {
-          beta_p[c] += ws * shift_arr(j0, k0, l0, 0);
-        }
-        for (int c = 0; c < g_p.size(); ++c) {
-          g_p[c] += ws * met3d_arr(j0, k0, l0, c);
+        interp_derivs1st(dalp_p, lapse_arr, j0, k0, l0, 0, dxi, ws);
+
+        for (int c = 0; c < 3; ++c) {
+          beta_p[c] += ws * shift_arr(j0, k0, l0, c);
+          interp_derivs1st(dbeta_p[c], shift_arr, j0, k0, l0, c, dxi, ws);
         }
 
-          dalp_p[0] += ws * fd_1_o2<0, CCTK_REAL>(lapse_arr, j0, k0, l0, 0, dxi);
+        for (int c = 0; c < 6; ++c) {
+          g_p[c] += ws * met3d_arr(j0, k0, l0, c);
+          interp_derivs1st(dg_p[c], met3d_arr, j0, k0, l0, c, dxi, ws);
         }
       }
     }
