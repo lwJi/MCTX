@@ -29,9 +29,10 @@ push_momentum(CCTK_REAL &pxp, CCTK_REAL &pyp, CCTK_REAL &pzp, CCTK_REAL pxp_rhs,
 
 template <typename T>
 CCTK_HOST CCTK_DEVICE CCTK_ATTRIBUTE_ALWAYS_INLINE inline void
-interp_derivs1st(std::array<T, 3> &dgf_p, amrex::Array4<T const> const &gf_,
-                 int j, int k, int l, int comp,
-                 amrex::GpuArray<CCTK_REAL, AMREX_SPACEDIM> const &dxi, T ws) {
+interp_derivs1st(T ws, std::array<T, 3> &dgf_p,
+                 amrex::Array4<T const> const &gf_, int j, int k, int l,
+                 int comp,
+                 amrex::GpuArray<CCTK_REAL, AMREX_SPACEDIM> const &dxi) {
   dgf_p[0] += ws * fd_1_o2<0>(gf_, j, k, l, comp, dxi);
   dgf_p[1] += ws * fd_1_o2<1>(gf_, j, k, l, comp, dxi);
   dgf_p[2] += ws * fd_1_o2<2>(gf_, j, k, l, comp, dxi);
@@ -63,6 +64,7 @@ gather_fields(NuParticleContainer::ParticleType const &p, CCTK_REAL &pxp_rhs,
   CCTK_REAL sy[] = {1. - yint, yint};
   CCTK_REAL sz[] = {1. - zint, zint};
 
+  // interp metric and its derivatives
   CCTK_REAL alp_p = 0;
   std::array<CCTK_REAL, 3> beta_p = {0};
   std::array<CCTK_REAL, 6> g_p = {0};
@@ -80,20 +82,22 @@ gather_fields(NuParticleContainer::ParticleType const &p, CCTK_REAL &pxp_rhs,
         const CCTK_REAL ws = sx[jj] * sy[kk] * sz[ll];
 
         alp_p += ws * lapse_arr(j0, k0, l0, 0);
-        interp_derivs1st(dalp_p, lapse_arr, j0, k0, l0, 0, dxi, ws);
+        interp_derivs1st(ws, dalp_p, lapse_arr, j0, k0, l0, 0, dxi);
 
         for (int c = 0; c < 3; ++c) {
           beta_p[c] += ws * shift_arr(j0, k0, l0, c);
-          interp_derivs1st(dbeta_p[c], shift_arr, j0, k0, l0, c, dxi, ws);
+          interp_derivs1st(ws, dbeta_p[c], shift_arr, j0, k0, l0, c, dxi);
         }
 
         for (int c = 0; c < 6; ++c) {
           g_p[c] += ws * met3d_arr(j0, k0, l0, c);
-          interp_derivs1st(dg_p[c], met3d_arr, j0, k0, l0, c, dxi, ws);
+          interp_derivs1st(ws, dg_p[c], met3d_arr, j0, k0, l0, c, dxi);
         }
       }
     }
   }
+
+  // calculate inverse of 3-metric
 
   pxp_rhs = 0.;
   pyp_rhs = 0.;
