@@ -200,9 +200,23 @@ extern "C" void TestNuParticles_PushAndDeposeParticles(CCTK_ARGUMENTS) {
 
   const CCTK_REAL dt = CCTK_DELTA_TIME;
 
+  const int tl = 0;
+  const int gi_dalp = CCTK_GroupIndex("Particles::dalp");
+  assert(gi_dalp >= 0);
+
   for (int patch = 0; patch < ghext->num_patches(); ++patch) {
     auto &pc = g_nupcs.at(patch);
-    pc->PushAndDeposeParticles(dt);
+
+    auto &pd = ghext->patchdata.at(patch);
+    for (int lev = 0; lev < pd.leveldata.size(); ++lev) {
+      const auto &ld = pd.leveldata.at(lev);
+      const auto &gd_dalp = *ld.groupdata.at(gi_dalp);
+      const amrex::MultiFab &dalp = *gd_dalp.mfab[tl];
+
+      pc->PushParticleMomenta(dalp, dt, lev);
+      pc->PushAndDeposeParticles(dt, lev);
+    }
+
   } // for patch
 
   // IO

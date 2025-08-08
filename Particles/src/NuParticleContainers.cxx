@@ -65,9 +65,7 @@ gather_fields(NuParticleContainer::ParticleType const &p, CCTK_REAL &dalpx_p,
   }
 }
 
-void NuParticleContainer::PushAndDeposeParticles(CCTK_REAL dt) {
-
-  const int lev = 0;
+void NuParticleContainer::PushAndDeposeParticles(CCTK_REAL dt, const int lev) {
 
   // const auto dxi = Geom(lev).InvCellSizeArray();
   const auto plo = Geom(lev).ProbLoArray();
@@ -103,9 +101,7 @@ void NuParticleContainer::PushAndDeposeParticles(CCTK_REAL dt) {
 }
 
 void NuParticleContainer::PushParticleMomenta(const amrex::MultiFab &dalp,
-                                              CCTK_REAL dt) {
-
-  const int lev = 0;
+                                              CCTK_REAL dt, const int lev) {
 
   const auto dxi = Geom(lev).InvCellSizeArray();
   const auto plo = Geom(lev).ProbLoArray();

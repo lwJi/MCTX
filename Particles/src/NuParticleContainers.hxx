@@ -43,9 +43,10 @@ class NuParticleContainer : public Container {
 public:
   NuParticleContainer(amrex::AmrCore *amr_core);
 
-  void PushAndDeposeParticles(CCTK_REAL dt);
+  void PushAndDeposeParticles(CCTK_REAL dt, const int lev);
 
-  void PushParticleMomenta(const amrex::MultiFab &dalp_arr, CCTK_REAL dt);
+  void PushParticleMomenta(const amrex::MultiFab &dalp_arr, CCTK_REAL dt,
+                           const int lev);
 
   // void RedistributeLocal() {
   //   const int lev_min = 0;
