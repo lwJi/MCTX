@@ -1,6 +1,13 @@
 # Schedule definitions for thorn TestNuParticles
 
-SCHEDULE TestNuParticles_Init AT initial
+SCHEDULE TestNuParticles_InitFields AT initial
+{
+  LANG: C
+  OPTIONS: local
+  WRITES: Particles::dalp(everywhere)
+} "Initialize metric fields"
+
+SCHEDULE TestNuParticles_InitParticles AT initial
 {
   LANG: C
   OPTIONS: global

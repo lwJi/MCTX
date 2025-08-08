@@ -2,6 +2,8 @@
 
 IMPLEMENTS: TestNuParticles
 
+INHERITS: Particles
+
 USES INCLUDE HEADER: loop_device.hxx
 
 USES INCLUDE HEADER: NuParticleContainers.hxx

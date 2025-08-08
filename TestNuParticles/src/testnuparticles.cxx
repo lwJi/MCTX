@@ -13,6 +13,7 @@
 #include "../../../CarpetX/CarpetX/src/driver.hxx"
 
 namespace TestNuParticles {
+using namespace Loop;
 using namespace NuParticleContainers;
 using namespace amrex;
 using namespace std;
@@ -49,7 +50,20 @@ CCTK_HOST void OutputParticles(const int it) {
   } // for patch
 }
 
-extern "C" void TestNuParticles_Init(CCTK_ARGUMENTS) {
+extern "C" void TestNuParticles_InitFields(CCTK_ARGUMENTS) {
+  DECLARE_CCTK_PARAMETERS;
+  DECLARE_CCTK_ARGUMENTSX_TestNuParticles_InitFields;
+
+  grid.loop_all_device<0, 0, 0>(grid.nghostzones,
+                                [=] CCTK_DEVICE(const PointDesc &p)
+                                    CCTK_ATTRIBUTE_ALWAYS_INLINE {
+                                      dalpx(p.I) = 1.0;
+                                      dalpy(p.I) = 2.0;
+                                      dalpz(p.I) = 3.0;
+                                    });
+}
+
+extern "C" void TestNuParticles_InitParticles(CCTK_ARGUMENTS) {
   DECLARE_CCTK_PARAMETERS;
 
   const array<int, 3> nppc{4, 4, 4};
