@@ -55,6 +55,10 @@ gather_fields(NuParticleContainer::ParticleType const &p, CCTK_REAL &pxp_rhs,
   std::array<CCTK_REAL, 3> beta_p = {0};
   std::array<CCTK_REAL, 6> g_p = {0};
 
+  std::array<CCTK_REAL, 3> dalp_p = {0};
+  std::array<std::array<CCTK_REAL, 3>, 3> dbeta_p = {0};
+  std::array<std::array<CCTK_REAL, 6>, 3> dg_p = {0};
+
   for (int ll = 0; ll <= 1; ++ll) {
     for (int kk = 0; kk <= 1; ++kk) {
       for (int jj = 0; jj <= 1; ++jj) {
@@ -69,6 +73,9 @@ gather_fields(NuParticleContainer::ParticleType const &p, CCTK_REAL &pxp_rhs,
         }
         for (int c = 0; c < g_p.size(); ++c) {
           g_p[c] += ws * met3d_arr(j0, k0, l0, c);
+        }
+
+          dalp_p[0] += ws * fd_1_o2<0, CCTK_REAL>(lapse_arr, j0, k0, l0, 0, dxi);
         }
       }
     }
