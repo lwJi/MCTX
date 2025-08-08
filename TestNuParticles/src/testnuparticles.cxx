@@ -18,10 +18,6 @@ using namespace NuParticleContainers;
 using namespace amrex;
 using namespace std;
 
-struct PIdx {
-  enum { ux = 0, uy, uz, nattribs };
-};
-
 CCTK_HOST CCTK_DEVICE void
 get_position_unit_cell(Real *r, const array<int, 3> &nppc, int i_part) {
   int nx = nppc[0];
@@ -194,9 +190,9 @@ extern "C" void TestNuParticles_InitParticles(CCTK_ARGUMENTS) {
               p.pos(1) = y;
               p.pos(2) = z;
 
-              arrdata[PIdx::ux][pidx] = u[0];
-              arrdata[PIdx::uy][pidx] = u[1];
-              arrdata[PIdx::uz][pidx] = u[2];
+              arrdata[PIdx::px][pidx] = u[0];
+              arrdata[PIdx::py][pidx] = u[1];
+              arrdata[PIdx::pz][pidx] = u[2];
 
               ++pidx;
             }
