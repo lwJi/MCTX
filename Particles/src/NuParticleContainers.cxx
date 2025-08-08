@@ -28,7 +28,7 @@ push_momentum(CCTK_REAL &pxp, CCTK_REAL &pyp, CCTK_REAL &pzp, CCTK_REAL pxp_rhs,
 CCTK_HOST CCTK_DEVICE CCTK_ATTRIBUTE_ALWAYS_INLINE inline void
 gather_fields(NuParticleContainer::ParticleType const &p, CCTK_REAL &pxp_rhs,
               CCTK_REAL &pyp_rhs, CCTK_REAL &pzp_rhs,
-              amrex::Array4<CCTK_REAL const> const &alpha_arr,
+              amrex::Array4<CCTK_REAL const> const &lapse_arr,
               amrex::Array4<CCTK_REAL const> const &shift_arr,
               amrex::Array4<CCTK_REAL const> const &met3d_arr,
               amrex::GpuArray<CCTK_REAL, AMREX_SPACEDIM> const &plo,
@@ -51,18 +51,25 @@ gather_fields(NuParticleContainer::ParticleType const &p, CCTK_REAL &pxp_rhs,
   CCTK_REAL sy[] = {1. - yint, yint};
   CCTK_REAL sz[] = {1. - zint, zint};
 
-  CCTK_REAL betax_p = 0.;
-  CCTK_REAL betay_p = 0.;
-  CCTK_REAL betaz_p = 0.;
+  CCTK_REAL alp_p = 0;
+  std::array<CCTK_REAL, 3> beta_p = {0};
+  std::array<CCTK_REAL, 6> g_p = {0};
+
   for (int ll = 0; ll <= 1; ++ll) {
     for (int kk = 0; kk <= 1; ++kk) {
       for (int jj = 0; jj <= 1; ++jj) {
-        betax_p +=
-            sx[jj] * sy[kk] * sz[ll] * shift_arr(j + jj, k + kk, l + ll, 0);
-        betay_p +=
-            sx[jj] * sy[kk] * sz[ll] * shift_arr(j + jj, k + kk, l + ll, 1);
-        betaz_p +=
-            sx[jj] * sy[kk] * sz[ll] * shift_arr(j + jj, k + kk, l + ll, 2);
+        const int j0 = j + jj;
+        const int k0 = k + kk;
+        const int l0 = l + ll;
+        const CCTK_REAL ws = sx[jj] * sy[kk] * sz[ll];
+
+        alp_p += ws * lapse_arr(j0, k0, l0, 0);
+        for (int c = 0; c < beta_p.size(); ++c) {
+          beta_p[c] += ws * shift_arr(j0, k0, l0, 0);
+        }
+        for (int c = 0; c < g_p.size(); ++c) {
+          g_p[c] += ws * met3d_arr(j0, k0, l0, c);
+        }
       }
     }
   }
