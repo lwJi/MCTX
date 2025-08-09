@@ -169,7 +169,6 @@ extern "C" void TestNuParticles_InitParticles(CCTK_ARGUMENTS) {
 
             for (int i_part = 0; i_part < num_ppc; i_part++) {
               Real r[3];
-              Real u[3];
 
               get_position_unit_cell(r, nppc, i_part);
 
@@ -179,24 +178,39 @@ extern "C" void TestNuParticles_InitParticles(CCTK_ARGUMENTS) {
 
               Real rad = std::sqrt(x * x + y * y + z * z);
 
-              u[0] = 0.1 * x / rad;
-              u[1] = 0.1 * y / rad;
-              u[2] = 0.1 * z / rad;
-
               if (x >= p_hi[0] || x < p_lo[0] || y >= p_hi[1] || y < p_lo[1] ||
                   z >= p_hi[2] || z < p_lo[2] || rad > 1.0)
                 continue;
 
+              Real r_sample[3];
+              Real p_sample[3];
+
+              r_sample[0] = Random(engine);
+              r_sample[1] = Random(engine);
+              r_sample[2] = Random(engine);
+
+              Real x_sample = p_lo[0] + (i + r_sample[0]) * dx[0];
+              Real y_sample = p_lo[1] + (j + r_sample[1]) * dx[1];
+              Real z_sample = p_lo[2] + (k + r_sample[2]) * dx[2];
+
+              Real rad_sample =
+                  std::sqrt(x_sample * x_sample + y_sample * y_sample +
+                            z_sample * z_sample);
+
+              p_sample[0] = 0.1 * x_sample / rad_sample;
+              p_sample[1] = 0.1 * y_sample / rad_sample;
+              p_sample[2] = 0.1 * z_sample / rad_sample;
+
               Container::ParticleType &p = pstruct[pidx];
               p.id() = pidx + 1;
               p.cpu() = procID;
-              p.pos(0) = x;
-              p.pos(1) = y;
-              p.pos(2) = z;
+              p.pos(0) = x_sample;
+              p.pos(1) = y_sample;
+              p.pos(2) = z_sample;
 
-              arrdata[PIdx::px][pidx] = u[0];
-              arrdata[PIdx::py][pidx] = u[1];
-              arrdata[PIdx::pz][pidx] = u[2];
+              arrdata[PIdx::px][pidx] = p_sample[0];
+              arrdata[PIdx::py][pidx] = p_sample[1];
+              arrdata[PIdx::pz][pidx] = p_sample[2];
 
               ++pidx;
             }
