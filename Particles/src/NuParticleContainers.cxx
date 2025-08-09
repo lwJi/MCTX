@@ -99,6 +99,10 @@ gather_fields(NuParticleContainer::ParticleType const &p, CCTK_REAL &pxp_rhs,
   }
 
   // calculate inverse of 3-metric
+  std::array<CCTK_REAL, 3> dtxpos = {0};
+  std::array<CCTK_REAL, 3> dtpmom = {0};
+  std::array<CCTK_REAL, 3> pmom = {0};
+  calc_rhs_geodesic(dtxpos, dtpmom, pmom, alp_p, beta_p, g_p, dalp_p, dbeta_p, dg_p);
 
   pxp_rhs = 0.;
   pyp_rhs = 0.;

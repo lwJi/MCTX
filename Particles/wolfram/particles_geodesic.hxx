@@ -286,7 +286,7 @@ invgam11*Power(pmom1,2) + 2*invgam12*pmom1*pmom2 + invgam22*Power(pmom2,2) +
 const auto
 pmomt
 =
-Sqrt(p2)/alpha
+sqrt(p2)/alpha
 ;
 
 

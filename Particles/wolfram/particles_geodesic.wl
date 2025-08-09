@@ -71,7 +71,7 @@ SetMainPrint[
   PrintInitializations[{Mode -> "Temp", TensorType -> "Vect"}, dADMVarlist];
   pr[];
 
-  PrintEquations[{Mode -> "Temp"}, TempVarlist];
+  PrintEquations[{Mode -> "Temp", ExtraReplaceRules -> {Sqrt[p2] -> sqrt[p2]}}, TempVarlist];
   pr[];
 
   PrintEquations[{Mode -> "Main"}, dtParticleVarlist];
