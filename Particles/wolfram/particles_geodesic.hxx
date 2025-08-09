@@ -5,19 +5,14 @@
 #define PARTICLES_GEODESIC_HXX
 
 #include "particles_powerinline.hxx"
+#include "../src/Particles.hxx"
 
 namespace Particles {
 
-template <typename T>
 CCTK_HOST CCTK_DEVICE inline void
-calc_rhs_geodesic(std::array<T, 3> &dtxpos, std::array<T, 3> &dtpmom,
-                  const std::array<T, 3> &pmom,
-                  const T alpha,
-                  const std::array<T, 3> &beta,
-                  const std::array<T, 6> &gam,
-                  const std::array<T, 3> &dalpha,
-                  const std::array<std::array<T, 3>, 3> &dbeta,
-                  const std::array<std::array<T, 3>, 6> &dgam) {
+calc_rhs_geodesic(VectR &dtxpos, VectR &dtpmom, const VectR &pmom,
+                  const ScalR alpha, const VectR &beta, const SmatR &gam,
+                  const dScalR &dalpha, const dVectR &dbeta, const dSmatR &dgam) {
 
 auto &dtxpos1 = dtxpos[0];
 auto &dtxpos2 = dtxpos[1];

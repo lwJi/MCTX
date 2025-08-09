@@ -6,9 +6,6 @@
 
 #include <loop_device.hxx>
 
-#include <array>
-#include <cmath>
-
 #include "particles_powerinline.hxx"
 
 namespace Particles {

@@ -42,21 +42,16 @@ SetOutputFile[FileNameJoin[{Directory[], "particles_geodesic.hxx"}]];
 SetMainPrint[
 
   pr["#include \"particles_powerinline.hxx\""];
+  pr["#include \"../src/Particles.hxx\""];
   pr[];
 
   pr["namespace Particles {"];
   pr[];
 
-  pr["template <typename T>"];
   pr["CCTK_HOST CCTK_DEVICE inline void"];
-  pr["calc_rhs_geodesic(std::array<T, 3> &dtxpos, std::array<T, 3> &dtpmom,"];
-  pr["                  const std::array<T, 3> &pmom,"];
-  pr["                  const T alpha,"];
-  pr["                  const std::array<T, 3> &beta,"];
-  pr["                  const std::array<T, 6> &gam,"];
-  pr["                  const std::array<T, 3> &dalpha,"];
-  pr["                  const std::array<std::array<T, 3>, 3> &dbeta,"];
-  pr["                  const std::array<std::array<T, 3>, 6> &dgam) {"];
+  pr["calc_rhs_geodesic(VectR &dtxpos, VectR &dtpmom, const VectR &pmom,"];
+  pr["                  const ScalR alpha, const VectR &beta, const SmatR &gam,"];
+  pr["                  const dScalR &dalpha, const dVectR &dbeta, const dSmatR &dgam) {"];
   pr[];
 
   PrintInitializations[{Mode -> "MainOut"}, dtParticleVarlist];

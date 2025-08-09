@@ -4,6 +4,7 @@
 
 namespace NuParticleContainers {
 
+using namespace Loop;
 using namespace Particles;
 
 std::vector<std::unique_ptr<NuParticleContainer>> g_nupcs;
@@ -12,17 +13,16 @@ NuParticleContainer::NuParticleContainer(amrex::AmrCore *amr_core)
     : Container(amr_core) {}
 
 CCTK_HOST CCTK_DEVICE CCTK_ATTRIBUTE_ALWAYS_INLINE inline void
-push_position(NuParticleContainer::ParticleType &p, CCTK_REAL pxp,
-              CCTK_REAL pyp, CCTK_REAL pzp, CCTK_REAL gaminv, CCTK_REAL dt) {
-  p.pos(0) += pxp * gaminv * dt;
-  p.pos(1) += pyp * gaminv * dt;
-  p.pos(2) += pzp * gaminv * dt;
+push_position(NuParticleContainer::ParticleType &p, CCTK_REAL xp_rhs,
+              CCTK_REAL yp_rhs, CCTK_REAL zp_rhs, CCTK_REAL dt) {
+  p.pos(0) += xp_rhs * dt;
+  p.pos(1) += yp_rhs * dt;
+  p.pos(2) += zp_rhs * dt;
 }
 
 CCTK_HOST CCTK_DEVICE CCTK_ATTRIBUTE_ALWAYS_INLINE inline void
 push_momentum(CCTK_REAL &pxp, CCTK_REAL &pyp, CCTK_REAL &pzp, CCTK_REAL pxp_rhs,
               CCTK_REAL pyp_rhs, CCTK_REAL pzp_rhs, CCTK_REAL dt) {
-
   pxp += pxp_rhs * dt;
   pyp += pyp_rhs * dt;
   pzp += pzp_rhs * dt;
@@ -30,23 +30,20 @@ push_momentum(CCTK_REAL &pxp, CCTK_REAL &pyp, CCTK_REAL &pzp, CCTK_REAL pxp_rhs,
 
 template <typename T>
 CCTK_HOST CCTK_DEVICE CCTK_ATTRIBUTE_ALWAYS_INLINE inline void
-interp_derivs1st(T ws, std::array<T, 3> &dgf_p,
-                 amrex::Array4<T const> const &gf_, int j, int k, int l,
-                 int comp,
-                 amrex::GpuArray<CCTK_REAL, AMREX_SPACEDIM> const &dxi) {
+interp_derivs1st(T ws, dScalR &dgf_p, amrex::Array4<T const> const &gf_, int j,
+                 int k, int l, int comp, VectR const &dxi) {
   dgf_p[0] += ws * fd_1_o2<0>(gf_, j, k, l, comp, dxi);
   dgf_p[1] += ws * fd_1_o2<1>(gf_, j, k, l, comp, dxi);
   dgf_p[2] += ws * fd_1_o2<2>(gf_, j, k, l, comp, dxi);
 }
 
 CCTK_HOST CCTK_DEVICE CCTK_ATTRIBUTE_ALWAYS_INLINE inline void
-gather_fields(NuParticleContainer::ParticleType const &p, CCTK_REAL &pxp_rhs,
-              CCTK_REAL &pyp_rhs, CCTK_REAL &pzp_rhs,
+gather_fields(NuParticleContainer::ParticleType const &p, VectR &dtxpos,
+              VectR &dtpmom, const VectR &pmom,
               amrex::Array4<CCTK_REAL const> const &lapse_arr,
               amrex::Array4<CCTK_REAL const> const &shift_arr,
-              amrex::Array4<CCTK_REAL const> const &met3d_arr,
-              amrex::GpuArray<CCTK_REAL, AMREX_SPACEDIM> const &plo,
-              amrex::GpuArray<CCTK_REAL, AMREX_SPACEDIM> const &dxi) {
+              amrex::Array4<CCTK_REAL const> const &met3d_arr, VectR const &plo,
+              VectR const &dxi) {
 
   CCTK_REAL x = (p.pos(0) - plo[0]) * dxi[0];
   CCTK_REAL y = (p.pos(1) - plo[1]) * dxi[1];
@@ -66,13 +63,13 @@ gather_fields(NuParticleContainer::ParticleType const &p, CCTK_REAL &pxp_rhs,
   CCTK_REAL sz[] = {1. - zint, zint};
 
   // interp metric and its derivatives
-  CCTK_REAL alp_p = 0;
-  std::array<CCTK_REAL, 3> beta_p = {0};
-  std::array<CCTK_REAL, 6> g_p = {0};
+  ScalR alp_p = {0};
+  VectR beta_p = {0};
+  SmatR g_p = {0};
 
-  std::array<CCTK_REAL, 3> dalp_p = {0};
-  std::array<std::array<CCTK_REAL, 3>, 3> dbeta_p = {0};
-  std::array<std::array<CCTK_REAL, 3>, 6> dg_p = {0};
+  dScalR dalp_p = {0};
+  dVectR dbeta_p = {0};
+  dSmatR dg_p = {0};
 
   for (int ll = 0; ll <= 1; ++ll) {
     for (int kk = 0; kk <= 1; ++kk) {
@@ -98,15 +95,9 @@ gather_fields(NuParticleContainer::ParticleType const &p, CCTK_REAL &pxp_rhs,
     }
   }
 
-  // calculate inverse of 3-metric
-  std::array<CCTK_REAL, 3> dtxpos = {0};
-  std::array<CCTK_REAL, 3> dtpmom = {0};
-  std::array<CCTK_REAL, 3> pmom = {0};
-  calc_rhs_geodesic(dtxpos, dtpmom, pmom, alp_p, beta_p, g_p, dalp_p, dbeta_p, dg_p);
-
-  pxp_rhs = 0.;
-  pyp_rhs = 0.;
-  pzp_rhs = 0.;
+  // calculate rhs of position and momentum
+  calc_rhs_geodesic(dtxpos, dtpmom, pmom, alp_p, beta_p, g_p, dalp_p, dbeta_p,
+                    dg_p);
 }
 
 void NuParticleContainer::PushAndDeposeParticles(CCTK_REAL dt, const int lev) {
@@ -125,7 +116,7 @@ void NuParticleContainer::PushAndDeposeParticles(CCTK_REAL dt, const int lev) {
     CCTK_REAL *pyp = attribs[PIdx::py].data();
     CCTK_REAL *pzp = attribs[PIdx::pz].data();
 
-    AMREX_FOR_1D(np, i, {
+    amrex::ParallelFor(np, [=] CCTK_DEVICE(int i) noexcept {
       CCTK_REAL ginv = 1;
 
       // gather_fields(pstruct[i], Exp, Eyp, Ezp, Bxp, Byp, Bzp, Exarr, Eyarr,
@@ -135,7 +126,7 @@ void NuParticleContainer::PushAndDeposeParticles(CCTK_REAL dt, const int lev) {
       // Byp,
       //                     Bzp, q, m, dt);
 
-      push_position(pstruct[i], pxp[i], pyp[i], pzp[i], ginv, dt);
+      push_position(pstruct[i], pxp[i], pyp[i], pzp[i], dt);
 
       // deposit_current(jxarr, jyarr, jzarr, pstruct[i], pxp[i], pyp[i],
       // pzp[i],
@@ -155,7 +146,7 @@ void NuParticleContainer::PushParticleMomenta(const amrex::MultiFab &lapse,
   for (NuParIter pti(*this, lev); pti.isValid(); ++pti) {
     const int np = pti.numParticles();
 
-    ParticleType const *AMREX_RESTRICT pstruct = &(pti.GetArrayOfStructs()[0]);
+    ParticleType *AMREX_RESTRICT pstruct = &(pti.GetArrayOfStructs()[0]);
 
     auto &attribs = pti.GetAttribs();
     CCTK_REAL *AMREX_RESTRICT pxp = attribs[PIdx::px].data();
@@ -166,15 +157,17 @@ void NuParticleContainer::PushParticleMomenta(const amrex::MultiFab &lapse,
     auto const shift_arr = shift.array(pti);
     auto const met3d_arr = met3d.array(pti);
 
-    AMREX_PARALLEL_FOR_1D(np, i, {
-      CCTK_REAL pxp_rhs = 0;
-      CCTK_REAL pyp_rhs = 0;
-      CCTK_REAL pzp_rhs = 0;
+    amrex::ParallelFor(np, [=] CCTK_DEVICE(int i) noexcept {
+      VectR xp_rhs{};
+      VectR pp_rhs{};
+      VectR const pp{pxp[i], pyp[i], pzp[i]};
 
-      gather_fields(pstruct[i], pxp_rhs, pyp_rhs, pzp_rhs, lapse_arr, shift_arr,
+      gather_fields(pstruct[i], xp_rhs, pp_rhs, pp, lapse_arr, shift_arr,
                     met3d_arr, plo, dxi);
 
-      push_momentum(pxp[i], pyp[i], pzp[i], pxp_rhs, pyp_rhs, pzp_rhs, dt);
+      push_position(pstruct[i], xp_rhs[0], xp_rhs[1], xp_rhs[2], dt);
+      push_momentum(pxp[i], pyp[i], pzp[i], pp_rhs[0], pp_rhs[1], pp_rhs[2],
+                    dt);
     });
   }
 }
