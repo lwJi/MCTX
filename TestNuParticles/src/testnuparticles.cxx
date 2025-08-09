@@ -171,10 +171,7 @@ extern "C" void TestNuParticles_InitParticles(CCTK_ARGUMENTS) {
               Real r[3];
               Real u[3];
 
-              // get_position_unit_cell(r, nppc, i_part);
-              r[0] = Random(engine);
-              r[1] = Random(engine);
-              r[2] = Random(engine);
+              get_position_unit_cell(r, nppc, i_part);
 
               Real x = p_lo[0] + (i + r[0]) * dx[0];
               Real y = p_lo[1] + (j + r[1]) * dx[1];
