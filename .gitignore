@@ -1,0 +1,6 @@
+tags
+.ipynb_checkpoints
+*.pyc
+CarpetX/examples
+Maxwell.old
+StaticTrumpet.old
