@@ -43,7 +43,10 @@ class NuParticleContainer : public Container {
 public:
   NuParticleContainer(amrex::AmrCore *amr_core);
 
-  void PushAndDeposeParticles(CCTK_REAL dt, const int lev);
+  void PushAndDeposeParticles(const amrex::MultiFab &lapse,
+                              const amrex::MultiFab &shift,
+                              const amrex::MultiFab &met3d, CCTK_REAL dt,
+                              const int lev);
 
   void PushParticleMomenta(const amrex::MultiFab &lapse,
                            const amrex::MultiFab &shift,

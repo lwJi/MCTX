@@ -238,8 +238,8 @@ extern "C" void TestNuParticles_PushAndDeposeParticles(CCTK_ARGUMENTS) {
       const amrex::MultiFab &shift = *gd_shift.mfab[tl];
       const amrex::MultiFab &met3d = *gd_met3d.mfab[tl];
 
-      pc->PushParticleMomenta(lapse, shift, met3d, dt, lev);
-      pc->PushAndDeposeParticles(dt, lev);
+      pc->PushAndDeposeParticles(lapse, shift, met3d, dt, lev);
+      // pc->PushParticleMomenta(lapse, shift, met3d, dt, lev);
     }
 
   } // for patch
