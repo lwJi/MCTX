@@ -197,9 +197,9 @@ extern "C" void TestNuParticles_InitParticles(CCTK_ARGUMENTS) {
                   std::sqrt(x_sample * x_sample + y_sample * y_sample +
                             z_sample * z_sample);
 
-              p_sample[0] = 0.1 * x_sample / rad_sample;
-              p_sample[1] = 0.1 * y_sample / rad_sample;
-              p_sample[2] = 0.1 * z_sample / rad_sample;
+              p_sample[0] = x_sample / rad_sample;
+              p_sample[1] = y_sample / rad_sample;
+              p_sample[2] = z_sample / rad_sample;
 
               Container::ParticleType &p = pstruct[pidx];
               p.id() = pidx + 1;
