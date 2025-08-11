@@ -42,7 +42,7 @@ CCTK_HOST void OutputParticles(const int it) {
 
     pc->WriteAsciiFile(plotfilename);
 
-    // pc->WritePlotFile(plotfilename, "us");
+    // pc->WritePlotFile(plotfilename, "particles");
   } // for patch
 }
 
