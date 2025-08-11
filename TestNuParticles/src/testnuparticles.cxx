@@ -84,7 +84,6 @@ extern "C" void TestNuParticles_InitParticles(CCTK_ARGUMENTS) {
     const auto p_hi = pc->Geom(lev).ProbHiArray();
 
     const int num_ppc = nppc[0] * nppc[1] * nppc[2];
-    const Real scale_fac = dx[0] * dx[1] * dx[2] / num_ppc;
 
     for (MFIter mfi = pc->MakeMFIter(lev); mfi.isValid(); ++mfi) {
       const Box &tile_box = mfi.tilebox();
@@ -98,6 +97,8 @@ extern "C" void TestNuParticles_InitParticles(CCTK_ARGUMENTS) {
       Gpu::ManagedVector<unsigned int> offsets(tile_box.numPts());
       unsigned int *poffset = offsets.dataPtr();
 
+      // Counting pass: figure out exactly how many particles need to be created
+      // in each grid cell
       amrex::ParallelFor(
           tile_box, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             for (int i_part = 0; i_part < num_ppc; i_part++) {
@@ -115,6 +116,9 @@ extern "C" void TestNuParticles_InitParticles(CCTK_ARGUMENTS) {
                   z >= p_hi[2] || z < p_lo[2] || rad > 1.0)
                 continue;
 
+              // Calculates a unique 1D index (cellid) from the 3D cell index
+              // (i, j, k). This maps the 3D grid cell to a 1D memory location
+              // in the counts array.
               int ix = i - lo.x;
               int iy = j - lo.y;
               int iz = k - lo.z;
@@ -125,10 +129,14 @@ extern "C" void TestNuParticles_InitParticles(CCTK_ARGUMENTS) {
               unsigned int uiy = amrex::min(ny - 1, amrex::max(0, iy));
               unsigned int uiz = amrex::min(nz - 1, amrex::max(0, iz));
               unsigned int cellid = (uix * ny + uiy) * nz + uiz;
+
+              // One valid particle should created here.
               pcount[cellid] += 1;
             }
           });
 
+      // Prefix sum: this is the key that lets the second pass write data in
+      // parallel without conflicts
       Gpu::exclusive_scan(counts.begin(), counts.end(), offsets.begin());
 
       int num_to_add =
@@ -138,19 +146,25 @@ extern "C" void TestNuParticles_InitParticles(CCTK_ARGUMENTS) {
       auto &particle_tile =
           particles[std::make_pair(mfi.index(), mfi.LocalTileIndex())];
 
+      // Determines the current size and the required new size
       auto old_size = particle_tile.GetArrayOfStructs().size();
       auto new_size = old_size + num_to_add;
+
+      // Crucially, this resizes the container only once, which is much more
+      // efficient than adding particles one by one.
       particle_tile.resize(new_size);
 
       if (num_to_add == 0)
         continue;
 
+      // Gets raw pointers to the two different ways particle data is stored for
+      // performance reasons: Array of Struct (AoS) and Struct of Arrays (SoA)
       ParticleType *pstruct = particle_tile.GetArrayOfStructs()().data();
-
       auto arrdata = particle_tile.GetStructOfArrays().realarray();
 
       int procID = ParallelDescriptor::MyProc();
 
+      // Placement pass:
       amrex::ParallelForRNG(
           tile_box,
           [=] AMREX_GPU_DEVICE(int i, int j, int k,
@@ -166,6 +180,9 @@ extern "C" void TestNuParticles_InitParticles(CCTK_ARGUMENTS) {
             unsigned int uiz = amrex::min(nz - 1, amrex::max(0, iz));
             unsigned int cellid = (uix * ny + uiy) * nz + uiz;
 
+            // Retrievers the starting write index (pidx) for the current cell
+            // (i, j, k) from the offsets array that was calculated by the
+            // exclusive_scan
             int pidx = poffset[cellid] - poffset[0];
 
             for (int i_part = 0; i_part < num_ppc; i_part++) {
@@ -202,6 +219,8 @@ extern "C" void TestNuParticles_InitParticles(CCTK_ARGUMENTS) {
               p_sample[1] = y_sample / rad_sample;
               p_sample[2] = z_sample / rad_sample;
 
+              // The core particle properties are written to the Array of
+              // Structs (AoS) memory layout
               ParticleType &p = pstruct[pidx];
               p.id() = pidx + 1;
               p.cpu() = procID;
@@ -209,6 +228,8 @@ extern "C" void TestNuParticles_InitParticles(CCTK_ARGUMENTS) {
               p.pos(1) = y_sample;
               p.pos(2) = z_sample;
 
+              // Write the remaining physical properties to the Struct of Arrays
+              // (SoA) memory layout
               arrdata[PIdx::px][pidx] = p_sample[0];
               arrdata[PIdx::py][pidx] = p_sample[1];
               arrdata[PIdx::pz][pidx] = p_sample[2];
