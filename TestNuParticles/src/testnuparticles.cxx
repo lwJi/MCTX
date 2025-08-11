@@ -101,21 +101,15 @@ extern "C" void TestNuParticles_InitParticles(CCTK_ARGUMENTS) {
       // in each grid cell
       amrex::ParallelFor(
           tile_box, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+            // Select cells
+            Real xc = p_lo[0] + (i + 0.5) * dx[0];
+            Real yc = p_lo[1] + (j + 0.5) * dx[1];
+            Real zc = p_lo[2] + (k + 0.5) * dx[2];
+            Real rc = std::sqrt(xc * xc + yc * yc + zc * zc);
+            if (rc > 1.0)
+              return;
+
             for (int i_part = 0; i_part < num_ppc; i_part++) {
-              Real ratio[3];
-
-              get_position_unit_cell(ratio, nppc, i_part);
-
-              Real x = p_lo[0] + (i + ratio[0]) * dx[0];
-              Real y = p_lo[1] + (j + ratio[1]) * dx[1];
-              Real z = p_lo[2] + (k + ratio[2]) * dx[2];
-
-              Real r = std::sqrt(x * x + y * y + z * z);
-
-              if (x >= p_hi[0] || x < p_lo[0] || y >= p_hi[1] || y < p_lo[1] ||
-                  z >= p_hi[2] || z < p_lo[2] || r > 1.0)
-                continue;
-
               // Calculates a unique 1D index (cellid) from the 3D cell index
               // (i, j, k). This maps the 3D grid cell to a 1D memory location
               // in the counts array.
@@ -169,6 +163,15 @@ extern "C" void TestNuParticles_InitParticles(CCTK_ARGUMENTS) {
           tile_box,
           [=] AMREX_GPU_DEVICE(int i, int j, int k,
                                amrex::RandomEngine const &engine) noexcept {
+            // Select cells
+            Real xc = p_lo[0] + (i + 0.5) * dx[0];
+            Real yc = p_lo[1] + (j + 0.5) * dx[1];
+            Real zc = p_lo[2] + (k + 0.5) * dx[2];
+            Real rc = std::sqrt(xc * xc + yc * yc + zc * zc);
+            if (rc > 1.0)
+              return;
+
+            // Calculate cellid
             int ix = i - lo.x;
             int iy = j - lo.y;
             int iz = k - lo.z;
@@ -187,36 +190,25 @@ extern "C" void TestNuParticles_InitParticles(CCTK_ARGUMENTS) {
 
             for (int i_part = 0; i_part < num_ppc; i_part++) {
               Real ratio[3];
-
-              get_position_unit_cell(ratio, nppc, i_part);
+              ratio[0] = Random(engine);
+              ratio[1] = Random(engine);
+              ratio[2] = Random(engine);
 
               Real x = p_lo[0] + (i + ratio[0]) * dx[0];
               Real y = p_lo[1] + (j + ratio[1]) * dx[1];
               Real z = p_lo[2] + (k + ratio[2]) * dx[2];
-              Real r = std::sqrt(x * x + y * y + z * z);
-
-              if (x >= p_hi[0] || x < p_lo[0] || y >= p_hi[1] || y < p_lo[1] ||
-                  z >= p_hi[2] || z < p_lo[2] || r > 1.0)
-                continue;
 
               // Sampling initial momentum
               Real p_sample[3]; // 3-momentum
-              Real ratio_sample[3];
-
-              ratio_sample[0] = Random(engine);
-              ratio_sample[1] = Random(engine);
-              ratio_sample[2] = Random(engine);
-              Real x_sample = p_lo[0] + (i + ratio_sample[0]) * dx[0];
-              Real y_sample = p_lo[1] + (j + ratio_sample[1]) * dx[1];
-              Real z_sample = p_lo[2] + (k + ratio_sample[2]) * dx[2];
-              Real r_sample =
-                  std::sqrt(x_sample * x_sample + y_sample * y_sample +
-                            z_sample * z_sample);
+              Real px = Random(engine);
+              Real py = Random(engine);
+              Real pz = Random(engine);
+              Real p_norm = std::sqrt(px * px + py * py + pz * pz);
 
               // Normalize the momemtum to unit
-              p_sample[0] = x_sample / r_sample;
-              p_sample[1] = y_sample / r_sample;
-              p_sample[2] = z_sample / r_sample;
+              p_sample[0] = px / p_norm;
+              p_sample[1] = py / p_norm;
+              p_sample[2] = pz / p_norm;
 
               // The core particle properties are written to the Array of
               // Structs (AoS) memory layout
