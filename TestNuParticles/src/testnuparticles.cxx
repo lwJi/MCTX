@@ -256,7 +256,7 @@ extern "C" void TestNuParticles_PushAndDeposeParticles(CCTK_ARGUMENTS) {
 
   // Redistribute particles
   for (auto &pc : g_nupcs) {
-    pc.Redistribute();
+    pc->Redistribute();
   }
 
   // IO
