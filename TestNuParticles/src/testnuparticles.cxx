@@ -199,16 +199,12 @@ extern "C" void TestNuParticles_InitParticles(CCTK_ARGUMENTS) {
               Real z = p_lo[2] + (k + ratio[2]) * dx[2];
 
               // Sampling initial momentum
-              Real p_sample[3]; // 3-momentum
-              Real px = Random(engine);
-              Real py = Random(engine);
-              Real pz = Random(engine);
-              Real p_norm = std::sqrt(px * px + py * py + pz * pz);
-
-              // Normalize the momemtum to unit
-              p_sample[0] = px / p_norm;
-              p_sample[1] = py / p_norm;
-              p_sample[2] = pz / p_norm;
+              const Real pt = 1.0;
+              Real costh = Random(engine) * 2 - 1;
+              Real ph = Random(engine) * (2 * M_PI);
+              Real sinth = std::sqrt(1 - costh * costh);
+              Real cosph = std::cos(ph);
+              Real sinph = std::sin(ph);
 
               // The core particle properties are written to the Array of
               // Structs (AoS) memory layout
@@ -221,9 +217,9 @@ extern "C" void TestNuParticles_InitParticles(CCTK_ARGUMENTS) {
 
               // Write the remaining physical properties to the Struct of Arrays
               // (SoA) memory layout
-              arrdata[PIdx::px][pidx] = p_sample[0];
-              arrdata[PIdx::py][pidx] = p_sample[1];
-              arrdata[PIdx::pz][pidx] = p_sample[2];
+              arrdata[PIdx::px][pidx] = pt * sinth * cosph;
+              arrdata[PIdx::py][pidx] = pt * sinth * sinph;
+              arrdata[PIdx::pz][pidx] = pt * costh;
 
               ++pidx;
             }
