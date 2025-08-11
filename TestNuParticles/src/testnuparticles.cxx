@@ -18,6 +18,8 @@ using namespace NuParticleContainers;
 using namespace amrex;
 using namespace std;
 
+using ParticleType = NuParticleContainer::ParticleType;
+
 CCTK_HOST CCTK_DEVICE void
 get_position_unit_cell(Real *r, const array<int, 3> &nppc, int i_part) {
   int nx = nppc[0];
@@ -143,8 +145,7 @@ extern "C" void TestNuParticles_InitParticles(CCTK_ARGUMENTS) {
       if (num_to_add == 0)
         continue;
 
-      Container::ParticleType *pstruct =
-          particle_tile.GetArrayOfStructs()().data();
+      ParticleType *pstruct = particle_tile.GetArrayOfStructs()().data();
 
       auto arrdata = particle_tile.GetStructOfArrays().realarray();
 
@@ -201,7 +202,7 @@ extern "C" void TestNuParticles_InitParticles(CCTK_ARGUMENTS) {
               p_sample[1] = y_sample / rad_sample;
               p_sample[2] = z_sample / rad_sample;
 
-              Container::ParticleType &p = pstruct[pidx];
+              ParticleType &p = pstruct[pidx];
               p.id() = pidx + 1;
               p.cpu() = procID;
               p.pos(0) = x_sample;
