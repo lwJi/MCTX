@@ -102,18 +102,18 @@ extern "C" void TestNuParticles_InitParticles(CCTK_ARGUMENTS) {
       amrex::ParallelFor(
           tile_box, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
             for (int i_part = 0; i_part < num_ppc; i_part++) {
-              Real r[3];
+              Real ratio[3];
 
-              get_position_unit_cell(r, nppc, i_part);
+              get_position_unit_cell(ratio, nppc, i_part);
 
-              Real x = p_lo[0] + (i + r[0]) * dx[0];
-              Real y = p_lo[1] + (j + r[1]) * dx[1];
-              Real z = p_lo[2] + (k + r[2]) * dx[2];
+              Real x = p_lo[0] + (i + ratio[0]) * dx[0];
+              Real y = p_lo[1] + (j + ratio[1]) * dx[1];
+              Real z = p_lo[2] + (k + ratio[2]) * dx[2];
 
-              Real rad = std::sqrt(x * x + y * y + z * z);
+              Real r = std::sqrt(x * x + y * y + z * z);
 
               if (x >= p_hi[0] || x < p_lo[0] || y >= p_hi[1] || y < p_lo[1] ||
-                  z >= p_hi[2] || z < p_lo[2] || rad > 1.0)
+                  z >= p_hi[2] || z < p_lo[2] || r > 1.0)
                 continue;
 
               // Calculates a unique 1D index (cellid) from the 3D cell index
@@ -186,47 +186,46 @@ extern "C" void TestNuParticles_InitParticles(CCTK_ARGUMENTS) {
             int pidx = poffset[cellid] - poffset[0];
 
             for (int i_part = 0; i_part < num_ppc; i_part++) {
-              Real r[3];
+              Real ratio[3];
 
-              get_position_unit_cell(r, nppc, i_part);
+              get_position_unit_cell(ratio, nppc, i_part);
 
-              Real x = p_lo[0] + (i + r[0]) * dx[0];
-              Real y = p_lo[1] + (j + r[1]) * dx[1];
-              Real z = p_lo[2] + (k + r[2]) * dx[2];
-
-              Real rad = std::sqrt(x * x + y * y + z * z);
+              Real x = p_lo[0] + (i + ratio[0]) * dx[0];
+              Real y = p_lo[1] + (j + ratio[1]) * dx[1];
+              Real z = p_lo[2] + (k + ratio[2]) * dx[2];
+              Real r = std::sqrt(x * x + y * y + z * z);
 
               if (x >= p_hi[0] || x < p_lo[0] || y >= p_hi[1] || y < p_lo[1] ||
-                  z >= p_hi[2] || z < p_lo[2] || rad > 1.0)
+                  z >= p_hi[2] || z < p_lo[2] || r > 1.0)
                 continue;
 
-              Real r_sample[3];
-              Real p_sample[3];
+              // Sampling initial momentum
+              Real p_sample[3]; // 3-momentum
+              Real ratio_sample[3];
 
-              r_sample[0] = Random(engine);
-              r_sample[1] = Random(engine);
-              r_sample[2] = Random(engine);
-
-              Real x_sample = p_lo[0] + (i + r_sample[0]) * dx[0];
-              Real y_sample = p_lo[1] + (j + r_sample[1]) * dx[1];
-              Real z_sample = p_lo[2] + (k + r_sample[2]) * dx[2];
-
-              Real rad_sample =
+              ratio_sample[0] = Random(engine);
+              ratio_sample[1] = Random(engine);
+              ratio_sample[2] = Random(engine);
+              Real x_sample = p_lo[0] + (i + ratio_sample[0]) * dx[0];
+              Real y_sample = p_lo[1] + (j + ratio_sample[1]) * dx[1];
+              Real z_sample = p_lo[2] + (k + ratio_sample[2]) * dx[2];
+              Real r_sample =
                   std::sqrt(x_sample * x_sample + y_sample * y_sample +
                             z_sample * z_sample);
 
-              p_sample[0] = x_sample / rad_sample;
-              p_sample[1] = y_sample / rad_sample;
-              p_sample[2] = z_sample / rad_sample;
+              // Normalize the momemtum to unit
+              p_sample[0] = x_sample / r_sample;
+              p_sample[1] = y_sample / r_sample;
+              p_sample[2] = z_sample / r_sample;
 
               // The core particle properties are written to the Array of
               // Structs (AoS) memory layout
               ParticleType &p = pstruct[pidx];
               p.id() = pidx + 1;
               p.cpu() = procID;
-              p.pos(0) = x_sample;
-              p.pos(1) = y_sample;
-              p.pos(2) = z_sample;
+              p.pos(0) = x;
+              p.pos(1) = y;
+              p.pos(2) = z;
 
               // Write the remaining physical properties to the Struct of Arrays
               // (SoA) memory layout
