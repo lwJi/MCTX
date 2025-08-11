@@ -250,10 +250,14 @@ extern "C" void TestNuParticles_PushAndDeposeParticles(CCTK_ARGUMENTS) {
       const amrex::MultiFab &met3d = *gd_met3d.mfab[tl];
 
       pc->PushAndDeposeParticles(lapse, shift, met3d, dt, lev);
-      // pc->PushParticleMomenta(lapse, shift, met3d, dt, lev);
     }
 
   } // for patch
+
+  // Redistribute particles
+  for (auto &pc : g_nupcs) {
+    pc.Redistribute();
+  }
 
   // IO
   OutputParticles(cctkGH->cctk_iteration);
