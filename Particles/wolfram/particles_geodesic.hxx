@@ -5,7 +5,6 @@
 #define PARTICLES_GEODESIC_HXX
 
 #include "particles_powerinline.hxx"
-#include "../src/Particles.hxx"
 
 namespace Particles {
 

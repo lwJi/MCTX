@@ -1,4 +1,5 @@
 #include "NuParticleContainers.hxx"
+#include "Particles.hxx"
 #include "../wolfram/particles_derivsinline.hxx"
 #include "../wolfram/particles_geodesic.hxx"
 
