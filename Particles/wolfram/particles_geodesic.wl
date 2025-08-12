@@ -56,7 +56,7 @@ SetMainPrint[
   PrintInitializations[{Mode -> "MainOut"}, dtParticleVarlist];
   pr[];
 
-  PrintInitializations[{Mode -> "MainIn"}, Drop[ParticleVarlist, 1]];
+  PrintInitializations[{Mode -> "Temp"}, Drop[ParticleVarlist, 1]];
   pr[];
 
   PrintInitializations[{Mode -> "Temp"}, Drop[ADMVarlist, 1]];

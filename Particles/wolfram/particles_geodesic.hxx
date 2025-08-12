@@ -20,9 +20,9 @@ auto &dtpmom1 = dtpmom[0];
 auto &dtpmom2 = dtpmom[1];
 auto &dtpmom3 = dtpmom[2];
 
-auto &pmom1 = pmom[0];
-auto &pmom2 = pmom[1];
-auto &pmom3 = pmom[2];
+const auto &pmom1 = pmom[0];
+const auto &pmom2 = pmom[1];
+const auto &pmom3 = pmom[2];
 
 const auto &beta1 = beta[0];
 const auto &beta2 = beta[1];
