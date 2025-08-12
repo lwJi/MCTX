@@ -1,6 +1,6 @@
 # Schedule definitions for thorn TestNuParticles
 
-SCHEDULE TestNuParticles_InitFields AT initial
+SCHEDULE TestNuParticles_InitFields AT initial AFTER NuParticleContainers_Setup
 {
   LANG: C
   OPTIONS: local
@@ -9,7 +9,7 @@ SCHEDULE TestNuParticles_InitFields AT initial
   WRITES: ADMBaseX::metric(everywhere)
 } "Initialize metric fields"
 
-SCHEDULE TestNuParticles_InitParticles AT initial
+SCHEDULE TestNuParticles_InitParticles AT initial AFTER TestNuParticles_InitFields
 {
   LANG: C
   OPTIONS: global
