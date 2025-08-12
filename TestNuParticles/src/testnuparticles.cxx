@@ -202,7 +202,7 @@ extern "C" void TestNuParticles_InitParticles(CCTK_ARGUMENTS) {
               const Real pt = 1.0;
               Real costh = Random(engine) * 2 - 1;
               Real ph = Random(engine) * (2 * M_PI);
-              Real sinth = std::sqrt(1 - costh * costh);
+              Real sinth = std::sqrt(amrex::max(Real(0), 1 - costh * costh));
               Real cosph = std::cos(ph);
               Real sinph = std::sin(ph);
 
