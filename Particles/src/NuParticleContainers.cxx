@@ -85,18 +85,6 @@ gather_fields_calcrhs_at_pos(VectR &dtmom, VectR &dtpos, const VectR &mom,
                     dg_p);
 }
 
-CCTK_HOST CCTK_DEVICE CCTK_ATTRIBUTE_ALWAYS_INLINE inline void
-gather_fields_calcrhs(VectR &dtmom, VectR &dtpos, const VectR &mom,
-                      NuParticleContainer::ParticleType const &p,
-                      amrex::Array4<CCTK_REAL const> const &lapse_arr,
-                      amrex::Array4<CCTK_REAL const> const &shift_arr,
-                      amrex::Array4<CCTK_REAL const> const &met3d_arr,
-                      VectR const &plo, VectR const &dxi) {
-  VectR pos{p.pos(0), p.pos(1), p.pos(2)};
-  gather_fields_calcrhs_at_pos(dtmom, dtpos, mom, pos, lapse_arr, shift_arr,
-                               met3d_arr, plo, dxi);
-}
-
 void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
                                                  const amrex::MultiFab &shift,
                                                  const amrex::MultiFab &met3d,
