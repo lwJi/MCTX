@@ -13,22 +13,6 @@ std::vector<std::unique_ptr<NuParticleContainer>> g_nupcs;
 NuParticleContainer::NuParticleContainer(amrex::AmrCore *amr_core)
     : Container(amr_core) {}
 
-CCTK_HOST CCTK_DEVICE CCTK_ATTRIBUTE_ALWAYS_INLINE inline void
-push_position(NuParticleContainer::ParticleType &p, CCTK_REAL xp_rhs,
-              CCTK_REAL yp_rhs, CCTK_REAL zp_rhs, CCTK_REAL dt) {
-  p.pos(0) += xp_rhs * dt;
-  p.pos(1) += yp_rhs * dt;
-  p.pos(2) += zp_rhs * dt;
-}
-
-CCTK_HOST CCTK_DEVICE CCTK_ATTRIBUTE_ALWAYS_INLINE inline void
-push_momentum(CCTK_REAL &pxp, CCTK_REAL &pyp, CCTK_REAL &pzp, CCTK_REAL pxp_rhs,
-              CCTK_REAL pyp_rhs, CCTK_REAL pzp_rhs, CCTK_REAL dt) {
-  pxp += pxp_rhs * dt;
-  pyp += pyp_rhs * dt;
-  pzp += pzp_rhs * dt;
-}
-
 template <typename T>
 CCTK_HOST CCTK_DEVICE CCTK_ATTRIBUTE_ALWAYS_INLINE inline void
 interp_derivs1st(T ws, dScalR &dgf_p, amrex::Array4<T const> const &gf_, int j,
@@ -120,34 +104,106 @@ void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
 
   const auto dxi = Geom(lev).InvCellSizeArray();
   const auto plo = Geom(lev).ProbLoArray();
+  const CCTK_REAL half_dt = CCTK_REAL(0.5) * dt;
 
+  // RK2 (midpoint): substep 1
+  // Save y^n in SoA, compute k1 as temps, advance to y^{n+1/2} in-place.
   for (NuParIter pti(*this, lev); pti.isValid(); ++pti) {
     const int np = pti.numParticles();
-
     ParticleType *AMREX_RESTRICT pstruct = &(pti.GetArrayOfStructs()[0]);
 
     auto &attribs = pti.GetAttribs();
+    // current (midpoint will be written in-place)
     CCTK_REAL *AMREX_RESTRICT pxp = attribs[PIdx::px].data();
     CCTK_REAL *AMREX_RESTRICT pyp = attribs[PIdx::py].data();
     CCTK_REAL *AMREX_RESTRICT pzp = attribs[PIdx::pz].data();
+    // original state y^n (persist across Redistribute)
+    CCTK_REAL *AMREX_RESTRICT x0a = attribs[PIdx::x0].data();
+    CCTK_REAL *AMREX_RESTRICT y0a = attribs[PIdx::y0].data();
+    CCTK_REAL *AMREX_RESTRICT z0a = attribs[PIdx::z0].data();
+    CCTK_REAL *AMREX_RESTRICT px0a = attribs[PIdx::px0].data();
+    CCTK_REAL *AMREX_RESTRICT py0a = attribs[PIdx::py0].data();
+    CCTK_REAL *AMREX_RESTRICT pz0a = attribs[PIdx::pz0].data();
 
     auto const lapse_arr = lapse.array(pti);
     auto const shift_arr = shift.array(pti);
     auto const met3d_arr = met3d.array(pti);
 
     amrex::ParallelFor(np, [=] CCTK_DEVICE(int i) noexcept {
-      VectR xp_rhs{};
-      VectR pp_rhs{};
-      VectR const pp{pxp[i], pyp[i], pzp[i]};
+      // save y^n
+      x0a[i] = pstruct[i].pos(0);
+      y0a[i] = pstruct[i].pos(1);
+      z0a[i] = pstruct[i].pos(2);
+      px0a[i] = pxp[i];
+      py0a[i] = pyp[i];
+      pz0a[i] = pzp[i];
 
-      gather_fields_calcrhs(pp_rhs, xp_rhs, pp, pstruct[i], lapse_arr,
-                            shift_arr, met3d_arr, plo, dxi);
+      const VectR pos0{x0a[i], y0a[i], z0a[i]};
+      const VectR mom0{px0a[i], py0a[i], pz0a[i]};
 
-      push_position(pstruct[i], xp_rhs[0], xp_rhs[1], xp_rhs[2], dt);
-      push_momentum(pxp[i], pyp[i], pzp[i], pp_rhs[0], pp_rhs[1], pp_rhs[2],
-                    dt);
+      // k1 = f(y^n)  (temps only)
+      VectR k1_m{}, k1_x{};
+      gather_fields_calcrhs_at_pos(k1_m, k1_x, mom0, pos0, lapse_arr, shift_arr,
+                                   met3d_arr, plo, dxi);
+
+      // y^{n+1/2} = y^n + (dt/2)*k1   (write midpoint in-place)
+      pstruct[i].pos(0) = x0a[i] + half_dt * k1_x[0];
+      pstruct[i].pos(1) = y0a[i] + half_dt * k1_x[1];
+      pstruct[i].pos(2) = z0a[i] + half_dt * k1_x[2];
+      pxp[i] = px0a[i] + half_dt * k1_m[0];
+      pyp[i] = py0a[i] + half_dt * k1_m[1];
+      pzp[i] = pz0a[i] + half_dt * k1_m[2];
     });
   }
+
+  // move particles that crossed tiles/ranks during substep 1
+  this->Redistribute(lev, lev, /*nGrow=*/0);
+
+  // RK2 (midpoint): substep 2
+  // Compute k2 at midpoint; finish with y^{n+1} = y^n + dt*k2.
+  for (NuParIter pti(*this, lev); pti.isValid(); ++pti) {
+    const int np = pti.numParticles();
+    ParticleType *AMREX_RESTRICT pstruct = &(pti.GetArrayOfStructs()[0]);
+
+    auto &attribs = pti.GetAttribs();
+    // current (midpoint state on entry)
+    CCTK_REAL *AMREX_RESTRICT pxp = attribs[PIdx::px].data();
+    CCTK_REAL *AMREX_RESTRICT pyp = attribs[PIdx::py].data();
+    CCTK_REAL *AMREX_RESTRICT pzp = attribs[PIdx::pz].data();
+    // saved y^n
+    CCTK_REAL *AMREX_RESTRICT x0a = attribs[PIdx::x0].data();
+    CCTK_REAL *AMREX_RESTRICT y0a = attribs[PIdx::y0].data();
+    CCTK_REAL *AMREX_RESTRICT z0a = attribs[PIdx::z0].data();
+    CCTK_REAL *AMREX_RESTRICT px0a = attribs[PIdx::px0].data();
+    CCTK_REAL *AMREX_RESTRICT py0a = attribs[PIdx::py0].data();
+    CCTK_REAL *AMREX_RESTRICT pz0a = attribs[PIdx::pz0].data();
+
+    auto const lapse_arr = lapse.array(pti);
+    auto const shift_arr = shift.array(pti);
+    auto const met3d_arr = met3d.array(pti);
+
+    amrex::ParallelFor(np, [=] CCTK_DEVICE(int i) noexcept {
+      // midpoint state
+      const VectR posh{pstruct[i].pos(0), pstruct[i].pos(1), pstruct[i].pos(2)};
+      const VectR momh{pxp[i], pyp[i], pzp[i]};
+
+      // k2 = f(y^{n+1/2})  (temps only)
+      VectR k2_m{}, k2_x{};
+      gather_fields_calcrhs_at_pos(k2_m, k2_x, momh, posh, lapse_arr, shift_arr,
+                                   met3d_arr, plo, dxi);
+
+      // y^{n+1} = y^n + dt*k2  (use saved y^n)
+      pstruct[i].pos(0) = x0a[i] + dt * k2_x[0];
+      pstruct[i].pos(1) = y0a[i] + dt * k2_x[1];
+      pstruct[i].pos(2) = z0a[i] + dt * k2_x[2];
+      pxp[i] = px0a[i] + dt * k2_m[0];
+      pyp[i] = py0a[i] + dt * k2_m[1];
+      pzp[i] = pz0a[i] + dt * k2_m[2];
+    });
+  }
+
+  // tidy after the full step
+  this->Redistribute(lev, lev, /*nGrow=*/0);
 }
 
 extern "C" void NuParticleContainers_Setup(CCTK_ARGUMENTS) {

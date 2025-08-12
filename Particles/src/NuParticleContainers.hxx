@@ -9,7 +9,20 @@
 namespace NuParticleContainers {
 
 struct PIdx {
-  enum { px = 0, py, pz, nattribs };
+  enum {
+    // physical momentum (SoA)
+    px = 0,
+    py,
+    pz,
+    // saved original state at t^n (persisted across the mid-step Redistribute)
+    x0,
+    y0,
+    z0, // position at t^n
+    px0,
+    py0,
+    pz0, // momentum at t^n
+    nattribs
+  };
 };
 
 using Container = amrex::AmrParticleContainer<0, 0, PIdx::nattribs, 0>;
