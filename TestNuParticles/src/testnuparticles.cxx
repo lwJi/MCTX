@@ -35,19 +35,6 @@ get_position_unit_cell(Real *r, const array<int, 3> &nppc, int i_part) {
   r[2] = (0.5 + iz_part) / nz;
 }
 
-CCTK_HOST void OutputParticles(const int it) {
-  const std::string &plotfilename = amrex::Concatenate("plt", it);
-  amrex::Print() << "  Writing plotfile " << plotfilename << "\n";
-
-  for (int patch = 0; patch < ghext->num_patches(); ++patch) {
-    auto &pc = g_nupcs.at(patch);
-
-    pc->WriteAsciiFile(plotfilename);
-
-    // pc->WritePlotFile(plotfilename, "particles");
-  } // for patch
-}
-
 extern "C" void TestNuParticles_InitFields(CCTK_ARGUMENTS) {
   DECLARE_CCTK_PARAMETERS;
   DECLARE_CCTK_ARGUMENTSX_TestNuParticles_InitFields;
@@ -228,7 +215,23 @@ extern "C" void TestNuParticles_InitParticles(CCTK_ARGUMENTS) {
   } // for patch
 
   // IO
-  OutputParticles(cctkGH->cctk_iteration);
+  const int it = cctkGH->cctk_iteration;
+  assert(ghext->num_patches() == 1);
+  for (int patch = 0; patch < ghext->num_patches(); ++patch) {
+    const std::string &pltAsciiName = amrex::Concatenate("asc_", it);
+    amrex::Print() << "  Writing ascii file " << pltAsciiName << "\n";
+
+    auto &pc = g_nupcs.at(patch);
+    pc->OutputParticlesAscii(pltAsciiName);
+  } // for patch
+
+  for (int patch = 0; patch < ghext->num_patches(); ++patch) {
+    const std::string &pltPlotName = amrex::Concatenate("plt_", it);
+    amrex::Print() << "  Writing plot file " << pltPlotName << "\n";
+
+    auto &pc = g_nupcs.at(patch);
+    pc->OutputParticlesPlot(pltPlotName);
+  } // for patch
 }
 
 extern "C" void TestNuParticles_PushAndDeposeParticles(CCTK_ARGUMENTS) {
@@ -267,11 +270,27 @@ extern "C" void TestNuParticles_PushAndDeposeParticles(CCTK_ARGUMENTS) {
 
       pc->PushAndDeposeParticles(lapse, shift, met3d, dt, lev);
     }
-
   } // for patch
 
   // IO
-  OutputParticles(cctkGH->cctk_iteration);
+  const int it = cctkGH->cctk_iteration;
+  assert(ghext->num_patches() == 1);
+
+  for (int patch = 0; patch < ghext->num_patches(); ++patch) {
+    const std::string &pltAsciiName = amrex::Concatenate("asc_", it);
+    amrex::Print() << "  Writing ascii file " << pltAsciiName << "\n";
+
+    auto &pc = g_nupcs.at(patch);
+    pc->OutputParticlesAscii(pltAsciiName);
+  } // for patch
+
+  for (int patch = 0; patch < ghext->num_patches(); ++patch) {
+    const std::string &pltPlotName = amrex::Concatenate("plt_", it);
+    amrex::Print() << "  Writing plot file " << pltPlotName << "\n";
+
+    auto &pc = g_nupcs.at(patch);
+    pc->OutputParticlesPlot(pltPlotName);
+  } // for patch
 }
 
 } // namespace TestNuParticles

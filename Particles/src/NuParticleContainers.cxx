@@ -194,6 +194,16 @@ void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
   this->Redistribute();
 }
 
+void NuParticleContainer::OutputParticlesAscii(const std::string &name) {
+
+  this->WriteAsciiFile(name);
+}
+
+void NuParticleContainer::OutputParticlesPlot(const std::string &name) {
+
+  this->WritePlotFile(name, "particles");
+}
+
 extern "C" void NuParticleContainers_Setup(CCTK_ARGUMENTS) {
   DECLARE_CCTK_PARAMETERS;
 
