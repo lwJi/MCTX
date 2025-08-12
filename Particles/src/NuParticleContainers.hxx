@@ -48,11 +48,6 @@ public:
                               const amrex::MultiFab &met3d, CCTK_REAL dt,
                               const int lev);
 
-  // void PushParticleMomenta(const amrex::MultiFab &lapse,
-  //                          const amrex::MultiFab &shift,
-  //                          const amrex::MultiFab &met3d, CCTK_REAL dt,
-  //                          const int lev);
-
   // void RedistributeLocal() {
   //   const int lev_min = 0;
   //   const int lev_max = 0;

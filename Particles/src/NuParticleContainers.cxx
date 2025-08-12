@@ -138,43 +138,6 @@ void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
   }
 }
 
-// void NuParticleContainer::PushParticleMomenta(const amrex::MultiFab &lapse,
-//                                               const amrex::MultiFab &shift,
-//                                               const amrex::MultiFab &met3d,
-//                                               CCTK_REAL dt, const int lev) {
-//
-//   const auto dxi = Geom(lev).InvCellSizeArray();
-//   const auto plo = Geom(lev).ProbLoArray();
-//
-//   for (NuParIter pti(*this, lev); pti.isValid(); ++pti) {
-//     const int np = pti.numParticles();
-//
-//     ParticleType *AMREX_RESTRICT pstruct = &(pti.GetArrayOfStructs()[0]);
-//
-//     auto &attribs = pti.GetAttribs();
-//     CCTK_REAL *AMREX_RESTRICT pxp = attribs[PIdx::px].data();
-//     CCTK_REAL *AMREX_RESTRICT pyp = attribs[PIdx::py].data();
-//     CCTK_REAL *AMREX_RESTRICT pzp = attribs[PIdx::pz].data();
-//
-//     auto const lapse_arr = lapse.array(pti);
-//     auto const shift_arr = shift.array(pti);
-//     auto const met3d_arr = met3d.array(pti);
-//
-//     amrex::ParallelFor(np, [=] CCTK_DEVICE(int i) noexcept {
-//       VectR xp_rhs{};
-//       VectR pp_rhs{};
-//       VectR const pp{pxp[i], pyp[i], pzp[i]};
-//
-//       gather_fields(pstruct[i], xp_rhs, pp_rhs, pp, lapse_arr, shift_arr,
-//                     met3d_arr, plo, dxi);
-//
-//       push_position(pstruct[i], xp_rhs[0], xp_rhs[1], xp_rhs[2], dt);
-//       push_momentum(pxp[i], pyp[i], pzp[i], pp_rhs[0], pp_rhs[1], pp_rhs[2],
-//                     dt);
-//     });
-//   }
-// }
-
 extern "C" void NuParticleContainers_Setup(CCTK_ARGUMENTS) {
   DECLARE_CCTK_PARAMETERS;
 
