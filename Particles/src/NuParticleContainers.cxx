@@ -89,6 +89,8 @@ void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
                                                  const amrex::MultiFab &shift,
                                                  const amrex::MultiFab &met3d,
                                                  CCTK_REAL dt, const int lev) {
+  const auto plo0 = Geom(0).ProbLoArray();
+  const auto phi0 = Geom(0).ProbHiArray();
 
   const auto dxi = Geom(lev).InvCellSizeArray();
   const auto plo = Geom(lev).ProbLoArray();
@@ -171,8 +173,10 @@ void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
     auto const met3d_arr = met3d.array(pti);
 
     amrex::ParallelFor(np, [=] CCTK_DEVICE(int i) noexcept {
+      ParticleType &p = pstruct[i];
+
       // midpoint state
-      const VectR posh{pstruct[i].pos(0), pstruct[i].pos(1), pstruct[i].pos(2)};
+      const VectR posh{p.pos(0), p.pos(1), p.pos(2)};
       const VectR momh{pxp[i], pyp[i], pzp[i]};
 
       // k2 = f(y^{n+1/2})  (temps only)
@@ -181,12 +185,17 @@ void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
                                    met3d_arr, plo, dxi);
 
       // y^{n+1} = y^n + dt*k2  (use saved y^n)
-      pstruct[i].pos(0) = x0a[i] + dt * k2_x[0];
-      pstruct[i].pos(1) = y0a[i] + dt * k2_x[1];
-      pstruct[i].pos(2) = z0a[i] + dt * k2_x[2];
+      p.pos(0) = x0a[i] + dt * k2_x[0];
+      p.pos(1) = y0a[i] + dt * k2_x[1];
+      p.pos(2) = z0a[i] + dt * k2_x[2];
       pxp[i] = px0a[i] + dt * k2_m[0];
       pyp[i] = py0a[i] + dt * k2_m[1];
       pzp[i] = pz0a[i] + dt * k2_m[2];
+
+      // Depose
+      if (p.pos(0) > phi0[0] || p.pos(0) < plo0[0] || p.pos(1) > phi0[1] ||
+          p.pos(1) < plo0[1] || p.pos(2) > phi0[2] || p.pos(2) < plo0[2])
+        p.id() = -1;
     });
   }
 
