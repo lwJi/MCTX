@@ -42,6 +42,7 @@ SetOutputFile[FileNameJoin[{Directory[], "particles_geodesic.hxx"}]];
 SetMainPrint[
 
   pr["#include \"particles_powerinline.hxx\""];
+  pr["#include \"../src/Particles.hxx\""];
   pr[];
 
   pr["namespace Particles {"];
