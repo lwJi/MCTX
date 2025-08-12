@@ -186,7 +186,7 @@ extern "C" void TestNuParticles_InitParticles(CCTK_ARGUMENTS) {
             // Retrievers the starting write index (pidx) for the current cell
             // (i, j, k) from the offsets array that was calculated by the
             // exclusive_scan
-            int pidx = poffset[cellid] - poffset[0];
+            int pidx = old_size + poffset[cellid];
 
             for (int i_part = 0; i_part < num_ppc; i_part++) {
               Real ratio[3];
