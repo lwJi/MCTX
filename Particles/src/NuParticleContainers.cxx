@@ -203,12 +203,16 @@ void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
   this->Redistribute();
 }
 
-void NuParticleContainer::OutputParticlesAscii(const std::string &name) {
+void NuParticleContainer::OutputParticlesAscii(const int it) {
+  const std::string &name = amrex::Concatenate("asc_", it);
+  amrex::Print() << "  Writing ascii file " << name << "\n";
 
   this->WriteAsciiFile(name);
 }
 
-void NuParticleContainer::OutputParticlesPlot(const std::string &name) {
+void NuParticleContainer::OutputParticlesPlot(const int it) {
+  const std::string &name = amrex::Concatenate("plt_", it);
+  amrex::Print() << "  Writing plot file " << name << "\n";
 
   this->WritePlotFile(name, "particles");
 }
