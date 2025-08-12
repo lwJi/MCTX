@@ -49,7 +49,7 @@ SetMainPrint[
   pr[];
 
   pr["CCTK_HOST CCTK_DEVICE inline void"];
-  pr["calc_rhs_geodesic(VectR &dtxpos, VectR &dtpmom, const VectR &pmom,"];
+  pr["calc_rhs_geodesic(VectR &dtpmom, VectR &dtxpos, const VectR &pmom,"];
   pr["                  const ScalR alpha, const VectR &beta, const SmatR &gam,"];
   pr["                  const dScalR &dalpha, const dVectR &dbeta, const dSmatR &dgam) {"];
   pr[];

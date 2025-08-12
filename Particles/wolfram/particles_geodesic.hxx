@@ -10,7 +10,7 @@
 namespace Particles {
 
 CCTK_HOST CCTK_DEVICE inline void
-calc_rhs_geodesic(VectR &dtxpos, VectR &dtpmom, const VectR &pmom,
+calc_rhs_geodesic(VectR &dtpmom, VectR &dtxpos, const VectR &pmom,
                   const ScalR alpha, const VectR &beta, const SmatR &gam,
                   const dScalR &dalpha, const dVectR &dbeta, const dSmatR &dgam) {
 

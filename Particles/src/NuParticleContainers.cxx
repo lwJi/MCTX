@@ -1,7 +1,7 @@
 #include "NuParticleContainers.hxx"
-#include "Particles.hxx"
 #include "../wolfram/particles_derivsinline.hxx"
 #include "../wolfram/particles_geodesic.hxx"
+#include "Particles.hxx"
 
 namespace NuParticleContainers {
 
@@ -39,16 +39,16 @@ interp_derivs1st(T ws, dScalR &dgf_p, amrex::Array4<T const> const &gf_, int j,
 }
 
 CCTK_HOST CCTK_DEVICE CCTK_ATTRIBUTE_ALWAYS_INLINE inline void
-gather_fields(NuParticleContainer::ParticleType const &p, VectR &dtxpos,
-              VectR &dtpmom, const VectR &pmom,
-              amrex::Array4<CCTK_REAL const> const &lapse_arr,
-              amrex::Array4<CCTK_REAL const> const &shift_arr,
-              amrex::Array4<CCTK_REAL const> const &met3d_arr, VectR const &plo,
-              VectR const &dxi) {
+gather_fields_calcrhs_at_pos(VectR &dtmom, VectR &dtpos, const VectR &mom,
+                             const VectR &pos,
+                             amrex::Array4<CCTK_REAL const> const &lapse_arr,
+                             amrex::Array4<CCTK_REAL const> const &shift_arr,
+                             amrex::Array4<CCTK_REAL const> const &met3d_arr,
+                             VectR const &plo, VectR const &dxi) {
 
-  CCTK_REAL x = (p.pos(0) - plo[0]) * dxi[0];
-  CCTK_REAL y = (p.pos(1) - plo[1]) * dxi[1];
-  CCTK_REAL z = (p.pos(2) - plo[2]) * dxi[2];
+  CCTK_REAL x = (pos[0] - plo[0]) * dxi[0];
+  CCTK_REAL y = (pos[1] - plo[1]) * dxi[1];
+  CCTK_REAL z = (pos[2] - plo[2]) * dxi[2];
 
   // cell indexes
   int j = amrex::Math::floor(x);
@@ -59,9 +59,9 @@ gather_fields(NuParticleContainer::ParticleType const &p, VectR &dtxpos,
   CCTK_REAL xint = x - j;
   CCTK_REAL yint = y - k;
   CCTK_REAL zint = z - l;
-  CCTK_REAL sx[] = {1. - xint, xint};
-  CCTK_REAL sy[] = {1. - yint, yint};
-  CCTK_REAL sz[] = {1. - zint, zint};
+  CCTK_REAL sx[] = {CCTK_REAL(1) - xint, xint};
+  CCTK_REAL sy[] = {CCTK_REAL(1) - yint, yint};
+  CCTK_REAL sz[] = {CCTK_REAL(1) - zint, zint};
 
   // interp metric and its derivatives
   ScalR alp_p = {0};
@@ -97,8 +97,20 @@ gather_fields(NuParticleContainer::ParticleType const &p, VectR &dtxpos,
   }
 
   // calculate rhs of position and momentum
-  calc_rhs_geodesic(dtxpos, dtpmom, pmom, alp_p, beta_p, g_p, dalp_p, dbeta_p,
+  calc_rhs_geodesic(dtmom, dtpos, mom, alp_p, beta_p, g_p, dalp_p, dbeta_p,
                     dg_p);
+}
+
+CCTK_HOST CCTK_DEVICE CCTK_ATTRIBUTE_ALWAYS_INLINE inline void
+gather_fields_calcrhs(VectR &dtmom, VectR &dtpos, const VectR &mom,
+                      NuParticleContainer::ParticleType const &p,
+                      amrex::Array4<CCTK_REAL const> const &lapse_arr,
+                      amrex::Array4<CCTK_REAL const> const &shift_arr,
+                      amrex::Array4<CCTK_REAL const> const &met3d_arr,
+                      VectR const &plo, VectR const &dxi) {
+  VectR pos{p.pos(0), p.pos(1), p.pos(2)};
+  gather_fields_calcrhs_at_pos(dtmom, dtpos, mom, pos, lapse_arr, shift_arr,
+                               met3d_arr, plo, dxi);
 }
 
 void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
@@ -128,8 +140,8 @@ void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
       VectR pp_rhs{};
       VectR const pp{pxp[i], pyp[i], pzp[i]};
 
-      gather_fields(pstruct[i], xp_rhs, pp_rhs, pp, lapse_arr, shift_arr,
-                    met3d_arr, plo, dxi);
+      gather_fields_calcrhs(pp_rhs, xp_rhs, pp, pstruct[i], lapse_arr,
+                            shift_arr, met3d_arr, plo, dxi);
 
       push_position(pstruct[i], xp_rhs[0], xp_rhs[1], xp_rhs[2], dt);
       push_momentum(pxp[i], pyp[i], pzp[i], pp_rhs[0], pp_rhs[1], pp_rhs[2],
