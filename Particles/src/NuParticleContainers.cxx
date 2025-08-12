@@ -157,7 +157,7 @@ void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
   }
 
   // move particles that crossed tiles/ranks during substep 1
-  this->Redistribute(lev, lev, /*nGrow=*/0);
+  this->Redistribute();
 
   // RK2 (midpoint): substep 2
   // Compute k2 at midpoint; finish with y^{n+1} = y^n + dt*k2.
@@ -203,7 +203,7 @@ void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
   }
 
   // tidy after the full step
-  this->Redistribute(lev, lev, /*nGrow=*/0);
+  this->Redistribute();
 }
 
 extern "C" void NuParticleContainers_Setup(CCTK_ARGUMENTS) {

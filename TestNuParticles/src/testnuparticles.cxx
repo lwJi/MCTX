@@ -263,11 +263,6 @@ extern "C" void TestNuParticles_PushAndDeposeParticles(CCTK_ARGUMENTS) {
 
   } // for patch
 
-  // Redistribute particles
-  for (auto &pc : g_nupcs) {
-    pc->Redistribute();
-  }
-
   // IO
   OutputParticles(cctkGH->cctk_iteration);
 }
