@@ -51,9 +51,9 @@ gather_fields(NuParticleContainer::ParticleType const &p, VectR &dtxpos,
   CCTK_REAL z = (p.pos(2) - plo[2]) * dxi[2];
 
   // cell indexes
-  int j = std::floor(x);
-  int k = std::floor(y);
-  int l = std::floor(z);
+  int j = amrex::Math::floor(x);
+  int k = amrex::Math::floor(y);
+  int l = amrex::Math::floor(z);
 
   // linear interpolation weights
   CCTK_REAL xint = x - j;
