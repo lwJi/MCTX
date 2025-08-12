@@ -235,6 +235,13 @@ extern "C" void TestNuParticles_PushAndDeposeParticles(CCTK_ARGUMENTS) {
   DECLARE_CCTK_PARAMETERS;
   DECLARE_CCTK_ARGUMENTS;
 
+  constexpr int deriv_order = 2;
+  for (int d = 0; d < 3; ++d)
+    if (cctk_nghostzones[d] < deriv_order / 2)
+      CCTK_VERROR("Need at least %d ghost zones for finite difference stencils "
+                  "which appear on the rhs of geodesic evolution",
+                  deriv_order / 2);
+
   const CCTK_REAL dt = CCTK_DELTA_TIME;
 
   const int tl = 0;
