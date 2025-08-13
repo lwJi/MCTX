@@ -1,5 +1,0 @@
-# Interface definition for thorn TestParticles
-
-IMPLEMENTS: TestParticles
-
-USES INCLUDE HEADER: loop_device.hxx
