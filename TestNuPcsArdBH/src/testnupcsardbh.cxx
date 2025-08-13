@@ -58,7 +58,7 @@ extern "C" void TestNuPcsArdBH_InitFields(CCTK_ARGUMENTS) {
 extern "C" void TestNuPcsArdBH_InitParticles(CCTK_ARGUMENTS) {
   DECLARE_CCTK_PARAMETERS;
 
-  const array<int, 3> nppc{4, 4, 4};
+  const array<int, 3> nppc{8, 8, 8};
 
   for (int patch = 0; patch < ghext->num_patches(); ++patch) {
     auto &pc = g_nupcs.at(patch);
@@ -92,8 +92,9 @@ extern "C" void TestNuPcsArdBH_InitParticles(CCTK_ARGUMENTS) {
             Real xc = p_lo[0] + (i + 0.5) * dx[0];
             Real yc = p_lo[1] + (j + 0.5) * dx[1];
             Real zc = p_lo[2] + (k + 0.5) * dx[2];
-            Real rc = std::sqrt(xc * xc + yc * yc + zc * zc);
-            if (rc > 1.0)
+
+            if (std::abs(xc - 5.05) > dx[0] / 2 ||
+                std::abs(yc - 5.05) > dx[1] / 2 || std::abs(zc) > dx[2] / 2)
               return;
 
             for (int i_part = 0; i_part < num_ppc; i_part++) {
@@ -154,8 +155,9 @@ extern "C" void TestNuPcsArdBH_InitParticles(CCTK_ARGUMENTS) {
             Real xc = p_lo[0] + (i + 0.5) * dx[0];
             Real yc = p_lo[1] + (j + 0.5) * dx[1];
             Real zc = p_lo[2] + (k + 0.5) * dx[2];
-            Real rc = std::sqrt(xc * xc + yc * yc + zc * zc);
-            if (rc > 1.0)
+
+            if (std::abs(xc - 5.05) > dx[0] / 2 ||
+                std::abs(yc - 5.05) > dx[1] / 2 || std::abs(zc) > dx[2] / 2)
               return;
 
             // Calculate cellid
