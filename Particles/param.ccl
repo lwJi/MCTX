@@ -1,1 +1,13 @@
 # Parameter definitions for thorn Particles
+
+INT out_plot_every "Output in amrex particle format every that many iterations" STEERABLE=always
+{
+  0 :: "never output Plot"
+  1:* :: "every that many iterations"
+} 0
+
+INT out_tsv_every "Output in TSV format every that many iterations" STEERABLE=always
+{
+  0 :: "never output TSV"
+  1:* :: "every that many iterations"
+} 0

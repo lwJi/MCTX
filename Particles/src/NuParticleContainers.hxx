@@ -61,9 +61,9 @@ public:
                               const amrex::MultiFab &met3d, CCTK_REAL dt,
                               const int lev);
 
-  void OutputParticlesAscii(const int it);
+  void OutputParticlesAscii(CCTK_ARGUMENTS);
 
-  void OutputParticlesPlot(const int it);
+  void OutputParticlesPlot(CCTK_ARGUMENTS);
 
   // void RedistributeLocal() {
   //   const int lev_min = 0;

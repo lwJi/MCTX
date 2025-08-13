@@ -203,18 +203,28 @@ void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
   this->Redistribute();
 }
 
-void NuParticleContainer::OutputParticlesAscii(const int it) {
-  const std::string &name = amrex::Concatenate("asc_", it);
-  amrex::Print() << "  Writing ascii file " << name << "\n";
+void NuParticleContainer::OutputParticlesAscii(CCTK_ARGUMENTS) {
+  DECLARE_CCTK_PARAMETERS;
 
-  this->WriteAsciiFile(name);
+  const int it = cctkGH->cctk_iteration;
+  if (out_tsv_every > 0 && it % out_tsv_every == 0) {
+    const std::string &name = amrex::Concatenate("asc_", it);
+    amrex::Print() << "  Writing ascii file " << name << "\n";
+
+    this->WriteAsciiFile(name);
+  }
 }
 
-void NuParticleContainer::OutputParticlesPlot(const int it) {
-  const std::string &name = amrex::Concatenate("plt_", it);
-  amrex::Print() << "  Writing plot file " << name << "\n";
+void NuParticleContainer::OutputParticlesPlot(CCTK_ARGUMENTS) {
+  DECLARE_CCTK_PARAMETERS;
 
-  this->WritePlotFile(name, "particles");
+  const int it = cctkGH->cctk_iteration;
+  if (out_plot_every > 0 && it % out_plot_every == 0) {
+    const std::string &name = amrex::Concatenate("plt_", it);
+    amrex::Print() << "  Writing plot file " << name << "\n";
+
+    this->WritePlotFile(name, "particles");
+  }
 }
 
 extern "C" void NuParticleContainers_Setup(CCTK_ARGUMENTS) {

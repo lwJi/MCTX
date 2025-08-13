@@ -215,17 +215,16 @@ extern "C" void TestNuParticles_InitParticles(CCTK_ARGUMENTS) {
   } // for patch
 
   // IO
-  const int it = cctkGH->cctk_iteration;
   assert(ghext->num_patches() == 1);
 
   for (int patch = 0; patch < ghext->num_patches(); ++patch) {
     auto &pc = g_nupcs.at(patch);
-    pc->OutputParticlesAscii(it);
+    pc->OutputParticlesAscii(CCTK_PASS_CTOC);
   } // for patch
 
   for (int patch = 0; patch < ghext->num_patches(); ++patch) {
     auto &pc = g_nupcs.at(patch);
-    pc->OutputParticlesPlot(it);
+    pc->OutputParticlesPlot(CCTK_PASS_CTOC);
   } // for patch
 }
 
@@ -268,17 +267,16 @@ extern "C" void TestNuParticles_PushAndDeposeParticles(CCTK_ARGUMENTS) {
   } // for patch
 
   // IO
-  const int it = cctkGH->cctk_iteration;
   assert(ghext->num_patches() == 1);
 
   for (int patch = 0; patch < ghext->num_patches(); ++patch) {
     auto &pc = g_nupcs.at(patch);
-    pc->OutputParticlesAscii(it);
+    pc->OutputParticlesAscii(CCTK_PASS_CTOC);
   } // for patch
 
   for (int patch = 0; patch < ghext->num_patches(); ++patch) {
     auto &pc = g_nupcs.at(patch);
-    pc->OutputParticlesPlot(it);
+    pc->OutputParticlesPlot(CCTK_PASS_CTOC);
   } // for patch
 }
 
