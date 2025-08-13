@@ -1,0 +1,22 @@
+# Schedule definitions for thorn TestNuPcsArdBH
+
+SCHEDULE TestNuPcsArdBH_InitFields AT initial AFTER NuParticleContainers_Setup
+{
+  LANG: C
+  OPTIONS: local
+  WRITES: ADMBaseX::lapse(everywhere)
+  WRITES: ADMBaseX::shift(everywhere)
+  WRITES: ADMBaseX::metric(everywhere)
+} "Initialize metric fields"
+
+SCHEDULE TestNuPcsArdBH_InitParticles AT initial AFTER TestNuPcsArdBH_InitFields
+{
+  LANG: C
+  OPTIONS: global
+} "Initialize test neutrino particles"
+
+SCHEDULE TestNuPcsArdBH_PushAndDeposeParticles AT evol
+{
+  LANG: C
+  OPTIONS: global
+} "Initialize test neutrino particles"

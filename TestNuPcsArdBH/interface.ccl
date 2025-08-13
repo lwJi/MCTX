@@ -1,0 +1,9 @@
+# Interface definition for thorn TestNuPcsArdBH
+
+IMPLEMENTS: TestNuPcsArdBH
+
+INHERITS: ADMBaseX
+
+USES INCLUDE HEADER: loop_device.hxx
+
+USES INCLUDE HEADER: NuParticleContainers.hxx
