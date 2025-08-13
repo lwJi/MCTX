@@ -1,0 +1,58 @@
+ActiveThorns = "
+  ADMBaseX
+  CarpetX
+  IOUtil
+  #Particles
+  TestNuParticles
+"
+
+Cactus::presync_mode = "mixed-error"
+
+CarpetX::verbose = yes
+CarpetX::poison_undefined_values = yes
+
+CarpetX::xmin = -2.0
+CarpetX::ymin = -2.0
+CarpetX::zmin = -2.0
+CarpetX::xmax = +2.0
+CarpetX::ymax = +2.0
+CarpetX::zmax = +2.0
+
+CarpetX::ncells_x = 16
+CarpetX::ncells_y = 16
+CarpetX::ncells_z = 16
+
+CarpetX::periodic_x = yes
+CarpetX::periodic_y = yes
+CarpetX::periodic_z = yes
+
+CarpetX::max_grid_size_x = 10000000
+CarpetX::max_grid_size_y = 10000000
+CarpetX::max_grid_size_z = 10000000
+
+CarpetX::max_tile_size_x = 10000000
+CarpetX::max_tile_size_y = 10000000
+CarpetX::max_tile_size_z = 10000000
+
+CarpetX::ghost_size = 1
+CarpetX::dtfac = 0.5
+
+Cactus::cctk_itlast = 8
+
+CarpetX::regrid_error_threshold = 4.
+CarpetX::max_num_levels = 1
+
+IO::out_dir = $parfile
+IO::out_every = 1
+IO::parfile_write = no
+
+CarpetX::out_adios2_every = 0
+CarpetX::out_silo_every = 0
+CarpetX::out_openpmd_every = 0
+
+CarpetX::out_performance = no
+CarpetX::out_metadata = no
+CarpetX::out_tsv_vars = ""
+
+Particles::out_tsv_every = 2
+Particles::out_plot_every = 2
