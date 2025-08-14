@@ -39,20 +39,28 @@ extern "C" void TestNuPcsArdBH_InitFields(CCTK_ARGUMENTS) {
   DECLARE_CCTK_PARAMETERS;
   DECLARE_CCTK_ARGUMENTSX_TestNuPcsArdBH_InitFields;
 
-  grid.loop_all_device<0, 0, 0>(grid.nghostzones,
-                                [=] CCTK_DEVICE(const PointDesc &p)
-                                    CCTK_ATTRIBUTE_ALWAYS_INLINE {
-                                      alp(p.I) = 1.0;
-                                      betax(p.I) = 0.0;
-                                      betay(p.I) = 0.0;
-                                      betaz(p.I) = 0.0;
-                                      gxx(p.I) = 1.0;
-                                      gxy(p.I) = 0.0;
-                                      gxz(p.I) = 0.0;
-                                      gyy(p.I) = 1.0;
-                                      gyz(p.I) = 0.0;
-                                      gzz(p.I) = 1.0;
-                                    });
+  const auto rs = 2 * BHmass;
+
+  grid.loop_all_device<0, 0, 0>(
+      grid.nghostzones,
+      [=] CCTK_DEVICE(const PointDesc &p) CCTK_ATTRIBUTE_ALWAYS_INLINE {
+        const auto r = std::sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
+
+        auto f = (r > rs) ? (1 - rs / r) : 1e-10;
+
+        const auto invf = 1.0 / f;
+
+        alp(p.I) = std::sqrt(f);
+        betax(p.I) = 0.0;
+        betay(p.I) = 0.0;
+        betaz(p.I) = 0.0;
+        gxx(p.I) = 1.0 + (invf - 1.0) * (p.x * p.x) / (r * r);
+        gxy(p.I) = 0.0 + (invf - 1.0) * (p.x * p.y) / (r * r);
+        gxz(p.I) = 0.0 + (invf - 1.0) * (p.x * p.z) / (r * r);
+        gyy(p.I) = 1.0 + (invf - 1.0) * (p.y * p.y) / (r * r);
+        gyz(p.I) = 0.0 + (invf - 1.0) * (p.y * p.z) / (r * r);
+        gzz(p.I) = 1.0 + (invf - 1.0) * (p.z * p.z) / (r * r);
+      });
 }
 
 extern "C" void TestNuPcsArdBH_InitParticles(CCTK_ARGUMENTS) {

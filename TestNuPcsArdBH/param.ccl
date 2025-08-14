@@ -1,1 +1,6 @@
 # Parameter definitions for thorn TestNuPcsArdBH
+
+CCTK_REAL BHmass "BH mass" STEERABLE=always
+{
+  0:* :: ""
+} 1.0
