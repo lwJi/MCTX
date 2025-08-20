@@ -208,7 +208,8 @@ void NuParticleContainer::OutputParticlesAscii(CCTK_ARGUMENTS) {
 
   const int it = cctkGH->cctk_iteration;
   if (out_tsv_every > 0 && it % out_tsv_every == 0) {
-    const std::string &name = amrex::Concatenate("asc_", it);
+    const std::string name =
+        std::string(out_dir) + "/" + amrex::Concatenate("ptcl_asc_", it);
     amrex::Print() << "  Writing ascii file " << name << "\n";
 
     this->WriteAsciiFile(name);
@@ -220,7 +221,8 @@ void NuParticleContainer::OutputParticlesPlot(CCTK_ARGUMENTS) {
 
   const int it = cctkGH->cctk_iteration;
   if (out_plot_every > 0 && it % out_plot_every == 0) {
-    const std::string &name = amrex::Concatenate("plt_", it);
+    const std::string name =
+        std::string(out_dir) + "/" + amrex::Concatenate("ptcl_plt_", it);
     amrex::Print() << "  Writing plot file " << name << "\n";
 
     this->WritePlotFile(name, "particles");
