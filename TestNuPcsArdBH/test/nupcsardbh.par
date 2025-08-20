@@ -1,0 +1,68 @@
+ActiveThorns = "
+  ADMBaseX
+  CarpetX
+  IOUtil
+  #Particles
+  TestNuPcsArdBH
+"
+
+Cactus::presync_mode = "mixed-error"
+
+CarpetX::verbose = yes
+CarpetX::poison_undefined_values = yes
+
+CarpetX::xmin = +2.5
+CarpetX::xmax = +12.5
+CarpetX::ymin = -2.0
+CarpetX::ymax = +10.0
+CarpetX::zmin = -2.55
+CarpetX::zmax = +2.45
+
+CarpetX::ncells_x = 100
+CarpetX::ncells_y = 120
+CarpetX::ncells_z = 50
+
+CarpetX::periodic_x = yes
+CarpetX::periodic_y = yes
+CarpetX::periodic_z = yes
+
+CarpetX::max_grid_size_x = 10000000
+CarpetX::max_grid_size_y = 10000000
+CarpetX::max_grid_size_z = 10000000
+
+CarpetX::max_tile_size_x = 10000000
+CarpetX::max_tile_size_y = 10000000
+CarpetX::max_tile_size_z = 10000000
+
+CarpetX::blocking_factor_x = 2
+CarpetX::blocking_factor_y = 2
+CarpetX::blocking_factor_z = 2
+
+CarpetX::ghost_size = 1
+CarpetX::dtfac = 0.5
+
+Cactus::cctk_itlast = 128
+
+CarpetX::regrid_error_threshold = 4.
+CarpetX::max_num_levels = 1
+
+TestNuPcsArdBH::BHmass = 0.0
+
+IO::out_dir = $parfile
+IO::out_every = 32
+IO::parfile_write = no
+
+CarpetX::out_adios2_every = 0
+CarpetX::out_silo_every = 0
+CarpetX::out_openpmd_every = 0
+
+CarpetX::out_performance = no
+CarpetX::out_metadata = no
+CarpetX::out_tsv_vars = ""
+
+#CarpetX::out_silo_vars = "
+#  ADMBaseX::lapse
+#"
+
+Particles::out_tsv_every = 32
+Particles::out_plot_every = 0
