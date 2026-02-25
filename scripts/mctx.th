@@ -73,24 +73,24 @@ CactusBase/IOUtil
 CactusBase/SymBase
 CactusBase/Time
 
-# CactusUtils thorns
-!TARGET   = $ARR
-!TYPE     = git
-!URL      = https://bitbucket.org/cactuscode/cactusutils.git
-!REPO_PATH= $2
-!CHECKOUT = CactusUtils/Accelerator CactusUtils/OpenCLRunTime
-CactusUtils/Formaline
-CactusUtils/MemSpeed
-CactusUtils/NaNCatcher
-CactusUtils/Nice
-CactusUtils/NoMPI
-CactusUtils/SystemStatistics
-CactusUtils/SystemTopology
-CactusUtils/TerminationTrigger
-CactusUtils/TimerReport
-CactusUtils/Trigger
-CactusUtils/Vectors
-CactusUtils/WatchDog
+## CactusUtils thorns
+#!TARGET   = $ARR
+#!TYPE     = git
+#!URL      = https://bitbucket.org/cactuscode/cactusutils.git
+#!REPO_PATH= $2
+#!CHECKOUT = CactusUtils/Accelerator CactusUtils/OpenCLRunTime
+#CactusUtils/Formaline
+#CactusUtils/MemSpeed
+#CactusUtils/NaNCatcher
+#CactusUtils/Nice
+#CactusUtils/NoMPI
+#CactusUtils/SystemStatistics
+#CactusUtils/SystemTopology
+#CactusUtils/TerminationTrigger
+#CactusUtils/TimerReport
+#CactusUtils/Trigger
+#CactusUtils/Vectors
+#CactusUtils/WatchDog
 
 # Additional Cactus thorns
 !TARGET   = $ARR
