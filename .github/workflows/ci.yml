@@ -22,7 +22,6 @@ jobs:
         real-precision: [real64]
         mode: [debug, optimize]
         exclude:
-          - {accelerator: cpu, mode: debug}
           - {accelerator: cuda, real-precision: real64}
           - {accelerator: rocm, real-precision: real64}
           - {accelerator: rocm, real-precision: real32}
