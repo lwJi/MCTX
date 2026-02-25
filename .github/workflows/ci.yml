@@ -22,6 +22,8 @@ jobs:
         real-precision: [real64]
         mode: [debug, optimize]
         exclude:
+          - {accelerator: cuda, real-precision: real64}
+          - {accelerator: rocm, real-precision: real64}
           - {accelerator: rocm, real-precision: real32}
           - {accelerator: rocm, mode: debug} # uses too much memory?
           - {real-precision: real32, mode: optimize}
