@@ -10,30 +10,13 @@
 
 #include <NuParticleContainers.hxx>
 
-#include "../../../CarpetX/CarpetX/src/driver.hxx"
+#include <driver.hxx>
 
 namespace TestNuParticles {
 using namespace Loop;
 using namespace NuParticleContainers;
 using namespace amrex;
 using namespace std;
-
-using ParticleType = NuParticleContainer::ParticleType;
-
-CCTK_HOST CCTK_DEVICE void
-get_position_unit_cell(Real *r, const array<int, 3> &nppc, int i_part) {
-  int nx = nppc[0];
-  int ny = nppc[1];
-  int nz = nppc[2];
-
-  int ix_part = i_part / (ny * nz);
-  int iy_part = (i_part % (ny * nz)) % ny;
-  int iz_part = (i_part % (ny * nz)) / ny;
-
-  r[0] = (0.5 + ix_part) / nx;
-  r[1] = (0.5 + iy_part) / ny;
-  r[2] = (0.5 + iz_part) / nz;
-}
 
 extern "C" void TestNuParticles_InitFields(CCTK_ARGUMENTS) {
   DECLARE_CCTK_PARAMETERS;
@@ -128,7 +111,7 @@ extern "C" void TestNuParticles_InitParticles(CCTK_ARGUMENTS) {
           particles[std::make_pair(mfi.index(), mfi.LocalTileIndex())];
 
       // Determines the current size and the required new size
-      auto old_size = particle_tile.GetArrayOfStructs().size();
+      auto old_size = particle_tile.numParticles();
       auto new_size = old_size + num_to_add;
 
       // Crucially, this resizes the container only once, which is much more
@@ -138,10 +121,15 @@ extern "C" void TestNuParticles_InitParticles(CCTK_ARGUMENTS) {
       if (num_to_add == 0)
         continue;
 
-      // Gets raw pointers to the two different ways particle data is stored for
-      // performance reasons: Array of Struct (AoS) and Struct of Arrays (SoA)
-      ParticleType *pstruct = particle_tile.GetArrayOfStructs()().data();
-      auto arrdata = particle_tile.GetStructOfArrays().realarray();
+      // Get raw pointers to pure SoA particle data
+      auto &soa = particle_tile.GetStructOfArrays();
+      auto *AMREX_RESTRICT xp = soa.GetRealData(0).data();
+      auto *AMREX_RESTRICT yp = soa.GetRealData(1).data();
+      auto *AMREX_RESTRICT zp = soa.GetRealData(2).data();
+      auto *AMREX_RESTRICT pxp = soa.GetRealData(PIdx::px).data();
+      auto *AMREX_RESTRICT pyp = soa.GetRealData(PIdx::py).data();
+      auto *AMREX_RESTRICT pzp = soa.GetRealData(PIdx::pz).data();
+      auto *AMREX_RESTRICT idcpu_arr = soa.GetIdCPUData().data();
 
       int procID = ParallelDescriptor::MyProc();
 
@@ -193,20 +181,15 @@ extern "C" void TestNuParticles_InitParticles(CCTK_ARGUMENTS) {
               Real cosph = std::cos(ph);
               Real sinph = std::sin(ph);
 
-              // The core particle properties are written to the Array of
-              // Structs (AoS) memory layout
-              ParticleType &p = pstruct[pidx];
-              p.id() = pidx + 1;
-              p.cpu() = procID;
-              p.pos(0) = x;
-              p.pos(1) = y;
-              p.pos(2) = z;
-
-              // Write the remaining physical properties to the Struct of Arrays
-              // (SoA) memory layout
-              arrdata[PIdx::px][pidx] = pt * sinth * cosph;
-              arrdata[PIdx::py][pidx] = pt * sinth * sinph;
-              arrdata[PIdx::pz][pidx] = pt * costh;
+              // Write particle properties to pure SoA storage
+              amrex::ParticleIDWrapper<uint64_t>{idcpu_arr[pidx]} = pidx + 1;
+              amrex::ParticleCPUWrapper{idcpu_arr[pidx]} = procID;
+              xp[pidx] = x;
+              yp[pidx] = y;
+              zp[pidx] = z;
+              pxp[pidx] = pt * sinth * cosph;
+              pyp[pidx] = pt * sinth * sinph;
+              pzp[pidx] = pt * costh;
 
               ++pidx;
             }
