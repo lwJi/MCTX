@@ -23,7 +23,8 @@ Each thorn follows the Cactus format:
 ## Build & Test
 
 ```bash
-./agent_scripts/build_and_test.sh
+./agent_scripts/build.sh
+./agent_scripts/test.sh
 ```
 
 ## Architecture
