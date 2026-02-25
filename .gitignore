@@ -4,3 +4,7 @@ tags
 CarpetX/examples
 Maxwell.old
 StaticTrumpet.old
+
+thoughts/
+
+.claude/settings.local.json

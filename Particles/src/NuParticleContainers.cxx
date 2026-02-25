@@ -208,8 +208,8 @@ void NuParticleContainer::OutputParticlesAscii(CCTK_ARGUMENTS) {
 
   const int it = cctkGH->cctk_iteration;
   if (out_tsv_every > 0 && it % out_tsv_every == 0) {
-    const std::string name =
-        std::string(out_dir) + "/" + amrex::Concatenate("ptcl_asc_", it);
+    const std::string name = std::string(out_dir) + "/" +
+                             amrex::Concatenate("ptcl_asc_", it) + ".tsv";
     amrex::Print() << "  Writing ascii file " << name << "\n";
 
     this->WriteAsciiFile(name);
