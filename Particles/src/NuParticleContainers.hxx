@@ -4,52 +4,34 @@
 #include <AMReX_AmrParticles.H>
 #include <AMReX_Particles.H>
 
-#include "../../../CarpetX/CarpetX/src/driver.hxx"
+#include <driver.hxx>
 
 namespace NuParticleContainers {
 
 struct PIdx {
   enum {
-    // physical momentum (SoA)
-    px = 0,
+    // Positions occupy SoA slots 0..AMREX_SPACEDIM-1 (managed by AMReX)
+    // User attributes start at AMREX_SPACEDIM
+    px = AMREX_SPACEDIM,
     py,
     pz,
     // saved original state at t^n (persisted across the mid-step Redistribute)
     x0,
     y0,
-    z0, // position at t^n
+    z0,
     px0,
     py0,
-    pz0, // momentum at t^n
+    pz0,
     nattribs
   };
 };
 
-using Container = amrex::AmrParticleContainer<0, 0, PIdx::nattribs, 0>;
+// Pure SoA container with AmrCore tracking
+using Container =
+    amrex::AmrParticleContainer_impl<amrex::SoAParticle<PIdx::nattribs, 0>,
+                                     PIdx::nattribs, 0>;
 using ParticleTile = Container::ParticleTileType;
-
-class NuParIter : public amrex::ParIter<0, 0, PIdx::nattribs, 0> {
-public:
-  using amrex::ParIter<0, 0, PIdx::nattribs, 0>::ParIter;
-
-  //    NuParIter (ContainerType& pc, int level);
-
-  const std::array<RealVector, PIdx::nattribs> &GetAttribs() const {
-    return GetStructOfArrays().GetRealData();
-  }
-
-  std::array<RealVector, PIdx::nattribs> &GetAttribs() {
-    return GetStructOfArrays().GetRealData();
-  }
-
-  const RealVector &GetAttribs(int comp) const {
-    return GetStructOfArrays().GetRealData(comp);
-  }
-
-  RealVector &GetAttribs(int comp) {
-    return GetStructOfArrays().GetRealData(comp);
-  }
-};
+using ParIterType = amrex::ParIterSoA<PIdx::nattribs, 0>;
 
 class NuParticleContainer : public Container {
 
@@ -64,17 +46,6 @@ public:
   void OutputParticlesAscii(CCTK_ARGUMENTS);
 
   void OutputParticlesPlot(CCTK_ARGUMENTS);
-
-  // void RedistributeLocal() {
-  //   const int lev_min = 0;
-  //   const int lev_max = 0;
-  //   const int nGrow = 0;
-  //   const int local = 1;
-  //   Redistribute(lev_min, lev_max, nGrow, local);
-  // }
-
-  // protected:
-  //   int m_species_id;
 };
 
 extern std::vector<std::unique_ptr<NuParticleContainer>> g_nupcs;

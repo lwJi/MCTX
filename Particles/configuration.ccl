@@ -1,6 +1,6 @@
 # Configuration definitions for thorn Particles
 
-REQUIRES Loop
+REQUIRES CarpetX Loop
 
 PROVIDES Particles
 {

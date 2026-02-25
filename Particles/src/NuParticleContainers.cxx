@@ -3,6 +3,8 @@
 #include "../wolfram/particles_geodesic.hxx"
 #include "Particles.hxx"
 
+#include <fstream>
+
 namespace NuParticleContainers {
 
 using namespace Loop;
@@ -98,22 +100,25 @@ void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
 
   // RK2 (midpoint): substep 1
   // Save y^n in SoA, compute k1 as temps, advance to y^{n+1/2} in-place.
-  for (NuParIter pti(*this, lev); pti.isValid(); ++pti) {
+  for (ParIterType pti(*this, lev); pti.isValid(); ++pti) {
     const int np = pti.numParticles();
-    ParticleType *AMREX_RESTRICT pstruct = &(pti.GetArrayOfStructs()[0]);
 
-    auto &attribs = pti.GetAttribs();
-    // current (midpoint will be written in-place)
-    CCTK_REAL *AMREX_RESTRICT pxp = attribs[PIdx::px].data();
-    CCTK_REAL *AMREX_RESTRICT pyp = attribs[PIdx::py].data();
-    CCTK_REAL *AMREX_RESTRICT pzp = attribs[PIdx::pz].data();
-    // original state y^n (persist across Redistribute)
-    CCTK_REAL *AMREX_RESTRICT x0a = attribs[PIdx::x0].data();
-    CCTK_REAL *AMREX_RESTRICT y0a = attribs[PIdx::y0].data();
-    CCTK_REAL *AMREX_RESTRICT z0a = attribs[PIdx::z0].data();
-    CCTK_REAL *AMREX_RESTRICT px0a = attribs[PIdx::px0].data();
-    CCTK_REAL *AMREX_RESTRICT py0a = attribs[PIdx::py0].data();
-    CCTK_REAL *AMREX_RESTRICT pz0a = attribs[PIdx::pz0].data();
+    auto &soa = pti.GetStructOfArrays();
+    // positions
+    auto *AMREX_RESTRICT xp = soa.GetRealData(0).data();
+    auto *AMREX_RESTRICT yp = soa.GetRealData(1).data();
+    auto *AMREX_RESTRICT zp = soa.GetRealData(2).data();
+    // momenta
+    auto *AMREX_RESTRICT pxp = soa.GetRealData(PIdx::px).data();
+    auto *AMREX_RESTRICT pyp = soa.GetRealData(PIdx::py).data();
+    auto *AMREX_RESTRICT pzp = soa.GetRealData(PIdx::pz).data();
+    // saved state y^n
+    auto *AMREX_RESTRICT x0a = soa.GetRealData(PIdx::x0).data();
+    auto *AMREX_RESTRICT y0a = soa.GetRealData(PIdx::y0).data();
+    auto *AMREX_RESTRICT z0a = soa.GetRealData(PIdx::z0).data();
+    auto *AMREX_RESTRICT px0a = soa.GetRealData(PIdx::px0).data();
+    auto *AMREX_RESTRICT py0a = soa.GetRealData(PIdx::py0).data();
+    auto *AMREX_RESTRICT pz0a = soa.GetRealData(PIdx::pz0).data();
 
     auto const lapse_arr = lapse.array(pti);
     auto const shift_arr = shift.array(pti);
@@ -121,9 +126,9 @@ void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
 
     amrex::ParallelFor(np, [=] CCTK_DEVICE(int i) noexcept {
       // save y^n
-      x0a[i] = pstruct[i].pos(0);
-      y0a[i] = pstruct[i].pos(1);
-      z0a[i] = pstruct[i].pos(2);
+      x0a[i] = xp[i];
+      y0a[i] = yp[i];
+      z0a[i] = zp[i];
       px0a[i] = pxp[i];
       py0a[i] = pyp[i];
       pz0a[i] = pzp[i];
@@ -137,9 +142,9 @@ void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
                                    met3d_arr, plo, dxi);
 
       // y^{n+1/2} = y^n + (dt/2)*k1   (write midpoint in-place)
-      pstruct[i].pos(0) = x0a[i] + half_dt * k1_x[0];
-      pstruct[i].pos(1) = y0a[i] + half_dt * k1_x[1];
-      pstruct[i].pos(2) = z0a[i] + half_dt * k1_x[2];
+      xp[i] = x0a[i] + half_dt * k1_x[0];
+      yp[i] = y0a[i] + half_dt * k1_x[1];
+      zp[i] = z0a[i] + half_dt * k1_x[2];
       pxp[i] = px0a[i] + half_dt * k1_m[0];
       pyp[i] = py0a[i] + half_dt * k1_m[1];
       pzp[i] = pz0a[i] + half_dt * k1_m[2];
@@ -151,32 +156,31 @@ void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
 
   // RK2 (midpoint): substep 2
   // Compute k2 at midpoint; finish with y^{n+1} = y^n + dt*k2.
-  for (NuParIter pti(*this, lev); pti.isValid(); ++pti) {
+  for (ParIterType pti(*this, lev); pti.isValid(); ++pti) {
     const int np = pti.numParticles();
-    ParticleType *AMREX_RESTRICT pstruct = &(pti.GetArrayOfStructs()[0]);
 
-    auto &attribs = pti.GetAttribs();
-    // current (midpoint state on entry)
-    CCTK_REAL *AMREX_RESTRICT pxp = attribs[PIdx::px].data();
-    CCTK_REAL *AMREX_RESTRICT pyp = attribs[PIdx::py].data();
-    CCTK_REAL *AMREX_RESTRICT pzp = attribs[PIdx::pz].data();
-    // saved y^n
-    CCTK_REAL *AMREX_RESTRICT x0a = attribs[PIdx::x0].data();
-    CCTK_REAL *AMREX_RESTRICT y0a = attribs[PIdx::y0].data();
-    CCTK_REAL *AMREX_RESTRICT z0a = attribs[PIdx::z0].data();
-    CCTK_REAL *AMREX_RESTRICT px0a = attribs[PIdx::px0].data();
-    CCTK_REAL *AMREX_RESTRICT py0a = attribs[PIdx::py0].data();
-    CCTK_REAL *AMREX_RESTRICT pz0a = attribs[PIdx::pz0].data();
+    auto &soa = pti.GetStructOfArrays();
+    auto *AMREX_RESTRICT xp = soa.GetRealData(0).data();
+    auto *AMREX_RESTRICT yp = soa.GetRealData(1).data();
+    auto *AMREX_RESTRICT zp = soa.GetRealData(2).data();
+    auto *AMREX_RESTRICT pxp = soa.GetRealData(PIdx::px).data();
+    auto *AMREX_RESTRICT pyp = soa.GetRealData(PIdx::py).data();
+    auto *AMREX_RESTRICT pzp = soa.GetRealData(PIdx::pz).data();
+    auto *AMREX_RESTRICT x0a = soa.GetRealData(PIdx::x0).data();
+    auto *AMREX_RESTRICT y0a = soa.GetRealData(PIdx::y0).data();
+    auto *AMREX_RESTRICT z0a = soa.GetRealData(PIdx::z0).data();
+    auto *AMREX_RESTRICT px0a = soa.GetRealData(PIdx::px0).data();
+    auto *AMREX_RESTRICT py0a = soa.GetRealData(PIdx::py0).data();
+    auto *AMREX_RESTRICT pz0a = soa.GetRealData(PIdx::pz0).data();
+    auto *AMREX_RESTRICT idcpu_arr = soa.GetIdCPUData().data();
 
     auto const lapse_arr = lapse.array(pti);
     auto const shift_arr = shift.array(pti);
     auto const met3d_arr = met3d.array(pti);
 
     amrex::ParallelFor(np, [=] CCTK_DEVICE(int i) noexcept {
-      ParticleType &p = pstruct[i];
-
       // midpoint state
-      const VectR posh{p.pos(0), p.pos(1), p.pos(2)};
+      const VectR posh{xp[i], yp[i], zp[i]};
       const VectR momh{pxp[i], pyp[i], pzp[i]};
 
       // k2 = f(y^{n+1/2})  (temps only)
@@ -185,17 +189,17 @@ void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
                                    met3d_arr, plo, dxi);
 
       // y^{n+1} = y^n + dt*k2  (use saved y^n)
-      p.pos(0) = x0a[i] + dt * k2_x[0];
-      p.pos(1) = y0a[i] + dt * k2_x[1];
-      p.pos(2) = z0a[i] + dt * k2_x[2];
+      xp[i] = x0a[i] + dt * k2_x[0];
+      yp[i] = y0a[i] + dt * k2_x[1];
+      zp[i] = z0a[i] + dt * k2_x[2];
       pxp[i] = px0a[i] + dt * k2_m[0];
       pyp[i] = py0a[i] + dt * k2_m[1];
       pzp[i] = pz0a[i] + dt * k2_m[2];
 
       // Depose
-      if (p.pos(0) > phi0[0] || p.pos(0) < plo0[0] || p.pos(1) > phi0[1] ||
-          p.pos(1) < plo0[1] || p.pos(2) > phi0[2] || p.pos(2) < plo0[2])
-        p.id() = -1;
+      if (xp[i] > phi0[0] || xp[i] < plo0[0] || yp[i] > phi0[1] ||
+          yp[i] < plo0[1] || zp[i] > phi0[2] || zp[i] < plo0[2])
+        amrex::ParticleIDWrapper<uint64_t>{idcpu_arr[i]} = -1;
     });
   }
 
@@ -212,7 +216,77 @@ void NuParticleContainer::OutputParticlesAscii(CCTK_ARGUMENTS) {
                              amrex::Concatenate("ptcl_asc_", it) + ".tsv";
     amrex::Print() << "  Writing ascii file " << name << "\n";
 
-    this->WriteAsciiFile(name);
+    // Pure SoA replacement for WriteAsciiFile (which requires AoS).
+    // Produces identical output format: positions, id, cpu, then user SoA
+    // attributes (momenta + saved state), excluding the position SoA slots.
+    const auto nparticles = this->TotalNumberOfParticles(true, false);
+    constexpr int n_user_reals = PIdx::nattribs - AMREX_SPACEDIM;
+
+    // Header (I/O processor only)
+    if (amrex::ParallelDescriptor::IOProcessor()) {
+      std::ofstream File(name, std::ios::out | std::ios::trunc);
+      if (!File.good())
+        amrex::FileOpenFailed(name);
+      File << nparticles << '\n'
+           << 0 << '\n'            // NStructReal
+           << 0 << '\n'            // NStructInt
+           << n_user_reals << '\n' // user SoA reals (positions excluded)
+           << 0 << '\n';           // NArrayInt
+      File.close();
+    }
+
+    amrex::ParallelDescriptor::Barrier();
+
+    // Each processor appends its particles sequentially
+    const int MyProc = amrex::ParallelDescriptor::MyProc();
+    for (int proc = 0; proc < amrex::ParallelDescriptor::NProcs(); ++proc) {
+      if (MyProc == proc) {
+        std::ofstream File(name, std::ios::out | std::ios::app);
+        File.precision(15);
+        if (!File.good())
+          amrex::FileOpenFailed(name);
+
+        for (int lev = 0; lev <= finestLevel(); ++lev) {
+          using PinnedTile =
+              amrex::ParticleTile<amrex::SoAParticle<PIdx::nattribs, 0>,
+                                  PIdx::nattribs, 0,
+                                  amrex::PolymorphicArenaAllocator>;
+
+          for (const auto &kv : GetParticles(lev)) {
+            PinnedTile pinned;
+            pinned.define(NumRuntimeRealComps(), NumRuntimeIntComps(), nullptr,
+                          nullptr, amrex::The_Pinned_Arena());
+            pinned.resize(kv.second.numParticles());
+            amrex::copyParticles(pinned, kv.second);
+
+            auto &soa = pinned.GetStructOfArrays();
+            const int np = pinned.numParticles();
+            auto *xp = soa.GetRealData(0).data();
+            auto *yp = soa.GetRealData(1).data();
+            auto *zp = soa.GetRealData(2).data();
+            auto *idcpu = soa.GetIdCPUData().data();
+
+            for (int i = 0; i < np; ++i) {
+              if (amrex::ParticleIDWrapper<>(idcpu[i]).is_valid()) {
+                File << xp[i] << ' ' << yp[i] << ' ' << zp[i] << ' ';
+                File << int(amrex::ParticleIDWrapper<>(idcpu[i])) << ' ';
+                File << int(amrex::ParticleCPUWrapper(idcpu[i])) << ' ';
+                for (int c = AMREX_SPACEDIM; c < PIdx::nattribs; ++c) {
+                  File << soa.GetRealData(c)[i] << ' ';
+                }
+                File << '\n';
+              }
+            }
+          }
+        }
+
+        File.flush();
+        File.close();
+        if (!File.good())
+          amrex::Abort("OutputParticlesAscii: problem writing file");
+      }
+      amrex::ParallelDescriptor::Barrier();
+    }
   }
 }
 
