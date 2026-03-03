@@ -130,15 +130,7 @@ extern "C" void TestNuPcsArdBH_InitParticles(CCTK_ARGUMENTS) {
       if (num_to_add == 0)
         continue;
 
-      // Get raw pointers to pure SoA particle data
-      auto &soa = particle_tile.GetStructOfArrays();
-      auto *AMREX_RESTRICT xp = soa.GetRealData(0).data();
-      auto *AMREX_RESTRICT yp = soa.GetRealData(1).data();
-      auto *AMREX_RESTRICT zp = soa.GetRealData(2).data();
-      auto *AMREX_RESTRICT pxp = soa.GetRealData(PIdx::px).data();
-      auto *AMREX_RESTRICT pyp = soa.GetRealData(PIdx::py).data();
-      auto *AMREX_RESTRICT pzp = soa.GetRealData(PIdx::pz).data();
-      auto *AMREX_RESTRICT idcpu_arr = soa.GetIdCPUData().data();
+      auto ptd = particle_tile.getParticleTileData();
 
       int procID = ParallelDescriptor::MyProc();
 
@@ -191,15 +183,15 @@ extern "C" void TestNuPcsArdBH_InitParticles(CCTK_ARGUMENTS) {
               Real cosph = std::cos(ph);
               Real sinph = std::sin(ph);
 
-              // Write particle properties to pure SoA storage
-              amrex::ParticleIDWrapper<uint64_t>{idcpu_arr[pidx]} = pidx + 1;
-              amrex::ParticleCPUWrapper{idcpu_arr[pidx]} = procID;
-              xp[pidx] = x;
-              yp[pidx] = y;
-              zp[pidx] = z;
-              pxp[pidx] = pt * sinth * cosph;
-              pyp[pidx] = pt * sinth * sinph;
-              pzp[pidx] = pt * costh;
+              // Write particle properties via PTD proxy
+              ptd.id(pidx) = pidx + 1;
+              ptd.cpu(pidx) = procID;
+              ptd.pos(0, pidx) = x;
+              ptd.pos(1, pidx) = y;
+              ptd.pos(2, pidx) = z;
+              ptd.rdata(PIdx::px)[pidx] = pt * sinth * cosph;
+              ptd.rdata(PIdx::py)[pidx] = pt * sinth * sinph;
+              ptd.rdata(PIdx::pz)[pidx] = pt * costh;
 
               ++pidx;
             }
