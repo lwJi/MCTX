@@ -13,7 +13,11 @@ using namespace Particles;
 std::vector<std::unique_ptr<NuParticleContainer>> g_nupcs;
 
 NuParticleContainer::NuParticleContainer(amrex::AmrCore *amr_core)
-    : Container(amr_core) {}
+    : Container(amr_core) {
+  SetSoACompileTimeNames(
+      {"x", "y", "z", "px", "py", "pz", "x0", "y0", "z0", "px0", "py0", "pz0"},
+      {});
+}
 
 template <typename T>
 CCTK_HOST CCTK_DEVICE CCTK_ATTRIBUTE_ALWAYS_INLINE inline void
@@ -102,23 +106,7 @@ void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
   // Save y^n in SoA, compute k1 as temps, advance to y^{n+1/2} in-place.
   for (ParIterType pti(*this, lev); pti.isValid(); ++pti) {
     const int np = pti.numParticles();
-
-    auto &soa = pti.GetStructOfArrays();
-    // positions
-    auto *AMREX_RESTRICT xp = soa.GetRealData(0).data();
-    auto *AMREX_RESTRICT yp = soa.GetRealData(1).data();
-    auto *AMREX_RESTRICT zp = soa.GetRealData(2).data();
-    // momenta
-    auto *AMREX_RESTRICT pxp = soa.GetRealData(PIdx::px).data();
-    auto *AMREX_RESTRICT pyp = soa.GetRealData(PIdx::py).data();
-    auto *AMREX_RESTRICT pzp = soa.GetRealData(PIdx::pz).data();
-    // saved state y^n
-    auto *AMREX_RESTRICT x0a = soa.GetRealData(PIdx::x0).data();
-    auto *AMREX_RESTRICT y0a = soa.GetRealData(PIdx::y0).data();
-    auto *AMREX_RESTRICT z0a = soa.GetRealData(PIdx::z0).data();
-    auto *AMREX_RESTRICT px0a = soa.GetRealData(PIdx::px0).data();
-    auto *AMREX_RESTRICT py0a = soa.GetRealData(PIdx::py0).data();
-    auto *AMREX_RESTRICT pz0a = soa.GetRealData(PIdx::pz0).data();
+    auto ptd = pti.GetParticleTile().getParticleTileData();
 
     auto const lapse_arr = lapse.array(pti);
     auto const shift_arr = shift.array(pti);
@@ -126,15 +114,16 @@ void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
 
     amrex::ParallelFor(np, [=] CCTK_DEVICE(int i) noexcept {
       // save y^n
-      x0a[i] = xp[i];
-      y0a[i] = yp[i];
-      z0a[i] = zp[i];
-      px0a[i] = pxp[i];
-      py0a[i] = pyp[i];
-      pz0a[i] = pzp[i];
+      ptd.rdata(PIdx::x0)[i] = ptd.pos(0, i);
+      ptd.rdata(PIdx::y0)[i] = ptd.pos(1, i);
+      ptd.rdata(PIdx::z0)[i] = ptd.pos(2, i);
+      ptd.rdata(PIdx::px0)[i] = ptd.rdata(PIdx::px)[i];
+      ptd.rdata(PIdx::py0)[i] = ptd.rdata(PIdx::py)[i];
+      ptd.rdata(PIdx::pz0)[i] = ptd.rdata(PIdx::pz)[i];
 
-      const VectR pos0{x0a[i], y0a[i], z0a[i]};
-      const VectR mom0{px0a[i], py0a[i], pz0a[i]};
+      const VectR pos0{ptd.pos(0, i), ptd.pos(1, i), ptd.pos(2, i)};
+      const VectR mom0{ptd.rdata(PIdx::px)[i], ptd.rdata(PIdx::py)[i],
+                       ptd.rdata(PIdx::pz)[i]};
 
       // k1 = f(y^n)  (temps only)
       VectR k1_m{}, k1_x{};
@@ -142,12 +131,12 @@ void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
                                    met3d_arr, plo, dxi);
 
       // y^{n+1/2} = y^n + (dt/2)*k1   (write midpoint in-place)
-      xp[i] = x0a[i] + half_dt * k1_x[0];
-      yp[i] = y0a[i] + half_dt * k1_x[1];
-      zp[i] = z0a[i] + half_dt * k1_x[2];
-      pxp[i] = px0a[i] + half_dt * k1_m[0];
-      pyp[i] = py0a[i] + half_dt * k1_m[1];
-      pzp[i] = pz0a[i] + half_dt * k1_m[2];
+      ptd.pos(0, i) = ptd.rdata(PIdx::x0)[i] + half_dt * k1_x[0];
+      ptd.pos(1, i) = ptd.rdata(PIdx::y0)[i] + half_dt * k1_x[1];
+      ptd.pos(2, i) = ptd.rdata(PIdx::z0)[i] + half_dt * k1_x[2];
+      ptd.rdata(PIdx::px)[i] = ptd.rdata(PIdx::px0)[i] + half_dt * k1_m[0];
+      ptd.rdata(PIdx::py)[i] = ptd.rdata(PIdx::py0)[i] + half_dt * k1_m[1];
+      ptd.rdata(PIdx::pz)[i] = ptd.rdata(PIdx::pz0)[i] + half_dt * k1_m[2];
     });
   }
 
@@ -158,21 +147,7 @@ void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
   // Compute k2 at midpoint; finish with y^{n+1} = y^n + dt*k2.
   for (ParIterType pti(*this, lev); pti.isValid(); ++pti) {
     const int np = pti.numParticles();
-
-    auto &soa = pti.GetStructOfArrays();
-    auto *AMREX_RESTRICT xp = soa.GetRealData(0).data();
-    auto *AMREX_RESTRICT yp = soa.GetRealData(1).data();
-    auto *AMREX_RESTRICT zp = soa.GetRealData(2).data();
-    auto *AMREX_RESTRICT pxp = soa.GetRealData(PIdx::px).data();
-    auto *AMREX_RESTRICT pyp = soa.GetRealData(PIdx::py).data();
-    auto *AMREX_RESTRICT pzp = soa.GetRealData(PIdx::pz).data();
-    auto *AMREX_RESTRICT x0a = soa.GetRealData(PIdx::x0).data();
-    auto *AMREX_RESTRICT y0a = soa.GetRealData(PIdx::y0).data();
-    auto *AMREX_RESTRICT z0a = soa.GetRealData(PIdx::z0).data();
-    auto *AMREX_RESTRICT px0a = soa.GetRealData(PIdx::px0).data();
-    auto *AMREX_RESTRICT py0a = soa.GetRealData(PIdx::py0).data();
-    auto *AMREX_RESTRICT pz0a = soa.GetRealData(PIdx::pz0).data();
-    auto *AMREX_RESTRICT idcpu_arr = soa.GetIdCPUData().data();
+    auto ptd = pti.GetParticleTile().getParticleTileData();
 
     auto const lapse_arr = lapse.array(pti);
     auto const shift_arr = shift.array(pti);
@@ -180,8 +155,9 @@ void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
 
     amrex::ParallelFor(np, [=] CCTK_DEVICE(int i) noexcept {
       // midpoint state
-      const VectR posh{xp[i], yp[i], zp[i]};
-      const VectR momh{pxp[i], pyp[i], pzp[i]};
+      const VectR posh{ptd.pos(0, i), ptd.pos(1, i), ptd.pos(2, i)};
+      const VectR momh{ptd.rdata(PIdx::px)[i], ptd.rdata(PIdx::py)[i],
+                       ptd.rdata(PIdx::pz)[i]};
 
       // k2 = f(y^{n+1/2})  (temps only)
       VectR k2_m{}, k2_x{};
@@ -189,17 +165,18 @@ void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
                                    met3d_arr, plo, dxi);
 
       // y^{n+1} = y^n + dt*k2  (use saved y^n)
-      xp[i] = x0a[i] + dt * k2_x[0];
-      yp[i] = y0a[i] + dt * k2_x[1];
-      zp[i] = z0a[i] + dt * k2_x[2];
-      pxp[i] = px0a[i] + dt * k2_m[0];
-      pyp[i] = py0a[i] + dt * k2_m[1];
-      pzp[i] = pz0a[i] + dt * k2_m[2];
+      ptd.pos(0, i) = ptd.rdata(PIdx::x0)[i] + dt * k2_x[0];
+      ptd.pos(1, i) = ptd.rdata(PIdx::y0)[i] + dt * k2_x[1];
+      ptd.pos(2, i) = ptd.rdata(PIdx::z0)[i] + dt * k2_x[2];
+      ptd.rdata(PIdx::px)[i] = ptd.rdata(PIdx::px0)[i] + dt * k2_m[0];
+      ptd.rdata(PIdx::py)[i] = ptd.rdata(PIdx::py0)[i] + dt * k2_m[1];
+      ptd.rdata(PIdx::pz)[i] = ptd.rdata(PIdx::pz0)[i] + dt * k2_m[2];
 
       // Depose
-      if (xp[i] > phi0[0] || xp[i] < plo0[0] || yp[i] > phi0[1] ||
-          yp[i] < plo0[1] || zp[i] > phi0[2] || zp[i] < plo0[2])
-        amrex::ParticleIDWrapper<uint64_t>{idcpu_arr[i]} = -1;
+      if (ptd.pos(0, i) > phi0[0] || ptd.pos(0, i) < plo0[0] ||
+          ptd.pos(1, i) > phi0[1] || ptd.pos(1, i) < plo0[1] ||
+          ptd.pos(2, i) > phi0[2] || ptd.pos(2, i) < plo0[2])
+        ptd.id(i) = -1;
     });
   }
 
@@ -259,20 +236,17 @@ void NuParticleContainer::OutputParticlesAscii(CCTK_ARGUMENTS) {
             pinned.resize(kv.second.numParticles());
             amrex::copyParticles(pinned, kv.second);
 
-            auto &soa = pinned.GetStructOfArrays();
             const int np = pinned.numParticles();
-            auto *xp = soa.GetRealData(0).data();
-            auto *yp = soa.GetRealData(1).data();
-            auto *zp = soa.GetRealData(2).data();
-            auto *idcpu = soa.GetIdCPUData().data();
+            auto ptd = pinned.getConstParticleTileData();
 
             for (int i = 0; i < np; ++i) {
-              if (amrex::ParticleIDWrapper<>(idcpu[i]).is_valid()) {
-                File << xp[i] << ' ' << yp[i] << ' ' << zp[i] << ' ';
-                File << int(amrex::ParticleIDWrapper<>(idcpu[i])) << ' ';
-                File << int(amrex::ParticleCPUWrapper(idcpu[i])) << ' ';
+              if (ptd.id(i).is_valid()) {
+                File << ptd.pos(0, i) << ' ' << ptd.pos(1, i) << ' '
+                     << ptd.pos(2, i) << ' ';
+                File << int(ptd.id(i)) << ' ';
+                File << int(ptd.cpu(i)) << ' ';
                 for (int c = AMREX_SPACEDIM; c < PIdx::nattribs; ++c) {
-                  File << soa.GetRealData(c)[i] << ' ';
+                  File << ptd.rdata(c)[i] << ' ';
                 }
                 File << '\n';
               }
