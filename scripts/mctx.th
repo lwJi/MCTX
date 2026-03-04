@@ -149,9 +149,9 @@ Numerical/AEILocalInterp
 !REPO_PATH= $2
 !CHECKOUT =
 CarpetX/ADMBaseX
-CarpetX/Algo
+#CarpetX/Algo
 CarpetX/Arith
-CarpetX/BoxInBox
+#CarpetX/BoxInBox
 CarpetX/CarpetX
 CarpetX/CarpetXRegrid
 CarpetX/CoordinatesX
@@ -177,3 +177,4 @@ CarpetXUtils/CXUtils
 !CHECKOUT =
 MCTX/Particles
 MCTX/TestNuParticles
+MCTX/TestNuPcsArdBH
