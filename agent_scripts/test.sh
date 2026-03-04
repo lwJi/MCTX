@@ -1,7 +1,7 @@
 #!/bin/bash
 
-if [ -z "${CONTAINERARMLOCAL:-}" ]; then
-  echo "✗ missing required env var: CONTAINERARMLOCAL" >&2
+if [ -z "${CONTAINERLOCAL:-}" ]; then
+  echo "✗ missing required env var: CONTAINERLOCAL" >&2
   exit 1
 fi
 
@@ -14,7 +14,7 @@ log=$(mktemp)
 trap 'rm -f "$log"' EXIT
 if docker exec \
   -e CONTAINERLOCALCACTUS="$CONTAINERLOCALCACTUS" \
-  "$CONTAINERARMLOCAL" zsh -c '
+  "$CONTAINERLOCAL" zsh -c '
   cd "$CONTAINERLOCALCACTUS" &&
   make sim-testsuite
 ' > "$log" 2>&1; then
