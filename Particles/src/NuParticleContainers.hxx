@@ -16,14 +16,20 @@ struct PIdx {
     px = AMREX_SPACEDIM,
     py,
     pz,
-    // saved original state at t^n (persisted across the mid-step Redistribute)
-    x0,
+    nattribs // = 6
+  };
+};
+
+// Runtime SoA scratch indices (0-based into m_runtime_rdata)
+struct RIdx {
+  enum {
+    x0 = 0,
     y0,
     z0,
     px0,
     py0,
     pz0,
-    nattribs
+    nruntime // = 6
   };
 };
 
