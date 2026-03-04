@@ -106,9 +106,7 @@ extern "C" void TestNuParticles_InitParticles(CCTK_ARGUMENTS) {
       int num_to_add =
           offsets[tile_box.numPts() - 1] + counts[tile_box.numPts() - 1];
 
-      auto &particles = pc->GetParticles(lev);
-      auto &particle_tile =
-          particles[std::make_pair(mfi.index(), mfi.LocalTileIndex())];
+      auto &particle_tile = pc->DefineAndReturnParticleTile(lev, mfi);
 
       // Determines the current size and the required new size
       auto old_size = particle_tile.numParticles();
@@ -201,6 +199,11 @@ extern "C" void TestNuParticles_InitParticles(CCTK_ARGUMENTS) {
     auto &pc = g_nupcs.at(patch);
     pc->OutputParticlesPlot(CCTK_PASS_CTOC);
   } // for patch
+
+  for (int patch = 0; patch < ghext->num_patches(); ++patch) {
+    auto &pc = g_nupcs.at(patch);
+    pc->OutputParticlesCheckpoint(CCTK_PASS_CTOC);
+  } // for patch
 }
 
 extern "C" void TestNuParticles_PushAndDeposeParticles(CCTK_ARGUMENTS) {
@@ -252,6 +255,11 @@ extern "C" void TestNuParticles_PushAndDeposeParticles(CCTK_ARGUMENTS) {
   for (int patch = 0; patch < ghext->num_patches(); ++patch) {
     auto &pc = g_nupcs.at(patch);
     pc->OutputParticlesPlot(CCTK_PASS_CTOC);
+  } // for patch
+
+  for (int patch = 0; patch < ghext->num_patches(); ++patch) {
+    auto &pc = g_nupcs.at(patch);
+    pc->OutputParticlesCheckpoint(CCTK_PASS_CTOC);
   } // for patch
 }
 

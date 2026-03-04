@@ -5,3 +5,9 @@ SCHEDULE NuParticleContainers_Setup AT initial
   LANG: C
   OPTIONS: global
 } "Setup Neutrino Particle Containers"
+
+SCHEDULE NuParticleContainers_Restart AT initial AFTER NuParticleContainers_Setup
+{
+  LANG: C
+  OPTIONS: global
+} "Restart Neutrino Particles from checkpoint (if configured)"

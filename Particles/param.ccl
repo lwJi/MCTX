@@ -12,6 +12,18 @@ INT out_tsv_every "Output in TSV format every that many iterations" STEERABLE=al
   1:* :: "every that many iterations"
 } 0
 
+INT out_checkpoint_every "Output AMReX checkpoint every that many iterations" STEERABLE=always
+{
+  0 :: "never output checkpoint"
+  1:* :: "every that many iterations"
+} 0
+
+STRING checkpoint_particle_dir "Directory to read particle checkpoint from for restart" STEERABLE=recover
+{
+  "" :: "no restart"
+  .* :: "directory path"
+} ""
+
 
 SHARES: IO
 

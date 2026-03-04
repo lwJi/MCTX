@@ -1,10 +1,11 @@
 #ifndef NUPARTICLECONTAINERS_HXX
 #define NUPARTICLECONTAINERS_HXX
 
+#include <cctk.h>
+#include <cctk_Arguments.h>
+
 #include <AMReX_AmrParticles.H>
 #include <AMReX_Particles.H>
-
-#include <driver.hxx>
 
 namespace NuParticleContainers {
 
@@ -46,6 +47,10 @@ public:
   void OutputParticlesAscii(CCTK_ARGUMENTS);
 
   void OutputParticlesPlot(CCTK_ARGUMENTS);
+
+  void OutputParticlesCheckpoint(CCTK_ARGUMENTS);
+
+  void RestartParticles(const std::string &dir);
 };
 
 extern std::vector<std::unique_ptr<NuParticleContainer>> g_nupcs;

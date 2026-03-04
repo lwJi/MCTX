@@ -3,6 +3,8 @@
 #include "../wolfram/particles_geodesic.hxx"
 #include "Particles.hxx"
 
+#include <driver.hxx>
+
 #include <fstream>
 
 namespace NuParticleContainers {
@@ -277,6 +279,29 @@ void NuParticleContainer::OutputParticlesPlot(CCTK_ARGUMENTS) {
   }
 }
 
+void NuParticleContainer::OutputParticlesCheckpoint(CCTK_ARGUMENTS) {
+  DECLARE_CCTK_PARAMETERS;
+
+  const int it = cctkGH->cctk_iteration;
+  if (out_checkpoint_every > 0 && it % out_checkpoint_every == 0) {
+    const std::string dir =
+        std::string(out_dir) + "/" + amrex::Concatenate("ptcl_chk_", it);
+    amrex::Print() << "  Writing particle checkpoint " << dir << "\n";
+
+    // Names for user SoA attributes (positions excluded for pure SoA)
+    const amrex::Vector<std::string> real_comp_names = {
+        "px", "py", "pz", "x0", "y0", "z0", "px0", "py0", "pz0"};
+    const amrex::Vector<std::string> int_comp_names = {};
+
+    this->Checkpoint(dir, "particles", real_comp_names, int_comp_names);
+  }
+}
+
+void NuParticleContainer::RestartParticles(const std::string &dir) {
+  amrex::Print() << "  Restarting particles from " << dir << "\n";
+  this->Restart(dir, "particles");
+}
+
 extern "C" void NuParticleContainers_Setup(CCTK_ARGUMENTS) {
   DECLARE_CCTK_PARAMETERS;
 
@@ -285,6 +310,18 @@ extern "C" void NuParticleContainers_Setup(CCTK_ARGUMENTS) {
     g_nupcs.emplace_back(
         std::make_unique<NuParticleContainer>(patchdata.amrcore.get()));
   } // for patch
+}
+
+extern "C" void NuParticleContainers_Restart(CCTK_ARGUMENTS) {
+  DECLARE_CCTK_PARAMETERS;
+
+  const std::string dir(checkpoint_particle_dir);
+  if (dir.empty())
+    return;
+
+  for (int patch = 0; patch < CarpetX::ghext->num_patches(); ++patch) {
+    g_nupcs.at(patch)->RestartParticles(dir);
+  }
 }
 
 } // namespace NuParticleContainers
