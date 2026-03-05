@@ -23,8 +23,6 @@ SetOutputFile[FileNameJoin[{Directory[], "particles_derivsinline.hxx"}]];
 SetMainPrint[
   pr["#include <loop_device.hxx>"];
   pr[];
-  pr["#include \"particles_powerinline.hxx\""];
-  pr[];
 
   pr["namespace Particles {"];
   pr["using namespace Loop;"];

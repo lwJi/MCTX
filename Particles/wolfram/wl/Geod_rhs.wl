@@ -12,4 +12,4 @@ SetEQN[pmomt[], (p2[]) ^ (1/2) / alpha[]];
 
 SetEQN[dtxpos[i_], invgam[i, j] pmom[-j] / pmomt[] - beta[i]];
 
-SetEQN[dtpmom[i_], -alpha[] pmomt[] dalpha[i] + pmom[-j] dbeta[j, i] - 1/2 pmom[-j] pmom[-k] dinvgam[j, k, i]];
+SetEQN[dtpmom[i_], -alpha[] pmomt[] dalpha[i] + pmom[-j] dbeta[j, i] - 1/(2 pmomt[]) pmom[-j] pmom[-k] dinvgam[j, k, i]];

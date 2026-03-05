@@ -69,7 +69,7 @@ SetMainPrint[
   PrintEquations[{Mode -> "Temp", ExtraReplaceRules -> {Sqrt[p2] -> sqrt[p2]}}, TempVarlist];
   pr[];
 
-  PrintEquations[{Mode -> "Main"}, dtParticleVarlist];
+  PrintEquations[{Mode -> "MainOut"}, dtParticleVarlist];
   pr[];
 
   pr["}"];

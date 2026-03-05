@@ -302,26 +302,29 @@ dtxpos3
 
 dtpmom1
 =
-dbeta11*pmom1 - (dinvgam111*Power(pmom1,2))/2. + dbeta21*pmom2 -
-  dinvgam121*pmom1*pmom2 - (dinvgam221*Power(pmom2,2))/2. + dbeta31*pmom3 -
-  dinvgam131*pmom1*pmom3 - dinvgam231*pmom2*pmom3 -
-  (dinvgam331*Power(pmom3,2))/2. - alpha*dalpha1*pmomt
+-0.5*(dinvgam111*Power(pmom1,2) + 2*dinvgam121*pmom1*pmom2 +
+     dinvgam221*Power(pmom2,2) + 2*dinvgam131*pmom1*pmom3 +
+     2*dinvgam231*pmom2*pmom3 + dinvgam331*Power(pmom3,2) -
+     2*dbeta11*pmom1*pmomt - 2*dbeta21*pmom2*pmomt -
+     2*dbeta31*pmom3*pmomt + 2*alpha*dalpha1*Power(pmomt,2))/pmomt
 ;
 
 dtpmom2
 =
-dbeta12*pmom1 - (dinvgam112*Power(pmom1,2))/2. + dbeta22*pmom2 -
-  dinvgam122*pmom1*pmom2 - (dinvgam222*Power(pmom2,2))/2. + dbeta32*pmom3 -
-  dinvgam132*pmom1*pmom3 - dinvgam232*pmom2*pmom3 -
-  (dinvgam332*Power(pmom3,2))/2. - alpha*dalpha2*pmomt
+-0.5*(dinvgam112*Power(pmom1,2) + 2*dinvgam122*pmom1*pmom2 +
+     dinvgam222*Power(pmom2,2) + 2*dinvgam132*pmom1*pmom3 +
+     2*dinvgam232*pmom2*pmom3 + dinvgam332*Power(pmom3,2) -
+     2*dbeta12*pmom1*pmomt - 2*dbeta22*pmom2*pmomt -
+     2*dbeta32*pmom3*pmomt + 2*alpha*dalpha2*Power(pmomt,2))/pmomt
 ;
 
 dtpmom3
 =
-dbeta13*pmom1 - (dinvgam113*Power(pmom1,2))/2. + dbeta23*pmom2 -
-  dinvgam123*pmom1*pmom2 - (dinvgam223*Power(pmom2,2))/2. + dbeta33*pmom3 -
-  dinvgam133*pmom1*pmom3 - dinvgam233*pmom2*pmom3 -
-  (dinvgam333*Power(pmom3,2))/2. - alpha*dalpha3*pmomt
+-0.5*(dinvgam113*Power(pmom1,2) + 2*dinvgam123*pmom1*pmom2 +
+     dinvgam223*Power(pmom2,2) + 2*dinvgam133*pmom1*pmom3 +
+     2*dinvgam233*pmom2*pmom3 + dinvgam333*Power(pmom3,2) -
+     2*dbeta13*pmom1*pmomt - 2*dbeta23*pmom2*pmomt -
+     2*dbeta33*pmom3*pmomt + 2*alpha*dalpha3*Power(pmomt,2))/pmomt
 ;
 
 
