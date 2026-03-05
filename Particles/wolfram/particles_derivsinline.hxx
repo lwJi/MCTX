@@ -6,8 +6,6 @@
 
 #include <loop_device.hxx>
 
-#include "particles_powerinline.hxx"
-
 namespace Particles {
 using namespace Loop;
 
