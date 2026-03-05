@@ -1,7 +1,7 @@
 #include "NuParticleContainers.hxx"
-#include "../wolfram/particles_derivsinline.hxx"
 #include "../wolfram/particles_geodesic.hxx"
 #include "Particles.hxx"
+#include "VertexLinearInterpolator.hxx"
 
 #include <fstream>
 
@@ -14,15 +14,6 @@ NuParticleContainer::NuParticleContainer(amrex::AmrCore *amr_core)
   SetSoACompileTimeNames({"x", "y", "z", "px", "py", "pz"}, {});
 }
 
-template <typename T>
-CCTK_HOST CCTK_DEVICE CCTK_ATTRIBUTE_ALWAYS_INLINE inline void
-interp_derivs1st(T ws, dScalR &dgf_p, amrex::Array4<T const> const &gf_, int j,
-                 int k, int l, int comp, VectR const &dxi) {
-  dgf_p[0] += ws * fd_1_o2<0>(gf_, j, k, l, comp, dxi);
-  dgf_p[1] += ws * fd_1_o2<1>(gf_, j, k, l, comp, dxi);
-  dgf_p[2] += ws * fd_1_o2<2>(gf_, j, k, l, comp, dxi);
-}
-
 CCTK_HOST CCTK_DEVICE CCTK_ATTRIBUTE_ALWAYS_INLINE inline void
 gather_fields_calcrhs_at_pos(VectR &dtmom, VectR &dtpos, const VectR &mom,
                              const VectR &pos,
@@ -31,57 +22,26 @@ gather_fields_calcrhs_at_pos(VectR &dtmom, VectR &dtpos, const VectR &mom,
                              amrex::Array4<CCTK_REAL const> const &met3d_arr,
                              VectR const &plo, VectR const &dxi) {
 
-  CCTK_REAL x = (pos[0] - plo[0]) * dxi[0];
-  CCTK_REAL y = (pos[1] - plo[1]) * dxi[1];
-  CCTK_REAL z = (pos[2] - plo[2]) * dxi[2];
+  const VertexLinear interp(pos, plo, dxi);
 
-  // cell indexes
-  int j = amrex::Math::floor(x);
-  int k = amrex::Math::floor(y);
-  int l = amrex::Math::floor(z);
+  // Interpolate metric fields and their gradients
+  const ScalR alp_p = interp.gather(lapse_arr, 0);
+  const dScalR dalp_p = interp.gather_deriv(lapse_arr, 0);
 
-  // linear interpolation weights
-  CCTK_REAL xint = x - j;
-  CCTK_REAL yint = y - k;
-  CCTK_REAL zint = z - l;
-  CCTK_REAL sx[] = {CCTK_REAL(1) - xint, xint};
-  CCTK_REAL sy[] = {CCTK_REAL(1) - yint, yint};
-  CCTK_REAL sz[] = {CCTK_REAL(1) - zint, zint};
-
-  // interp metric and its derivatives
-  ScalR alp_p = {0};
-  VectR beta_p = {0};
-  SmatR g_p = {0};
-
-  dScalR dalp_p = {0};
-  dVectR dbeta_p = {0};
-  dSmatR dg_p = {0};
-
-  for (int ll = 0; ll <= 1; ++ll) {
-    for (int kk = 0; kk <= 1; ++kk) {
-      for (int jj = 0; jj <= 1; ++jj) {
-        const int j0 = j + jj;
-        const int k0 = k + kk;
-        const int l0 = l + ll;
-        const CCTK_REAL ws = sx[jj] * sy[kk] * sz[ll];
-
-        alp_p += ws * lapse_arr(j0, k0, l0, 0);
-        interp_derivs1st(ws, dalp_p, lapse_arr, j0, k0, l0, 0, dxi);
-
-        for (int c = 0; c < 3; ++c) {
-          beta_p[c] += ws * shift_arr(j0, k0, l0, c);
-          interp_derivs1st(ws, dbeta_p[c], shift_arr, j0, k0, l0, c, dxi);
-        }
-
-        for (int c = 0; c < 6; ++c) {
-          g_p[c] += ws * met3d_arr(j0, k0, l0, c);
-          interp_derivs1st(ws, dg_p[c], met3d_arr, j0, k0, l0, c, dxi);
-        }
-      }
-    }
+  VectR beta_p;
+  dVectR dbeta_p;
+  for (int c = 0; c < 3; ++c) {
+    beta_p[c] = interp.gather(shift_arr, c);
+    dbeta_p[c] = interp.gather_deriv(shift_arr, c);
   }
 
-  // calculate rhs of position and momentum
+  SmatR g_p;
+  dSmatR dg_p;
+  for (int c = 0; c < 6; ++c) {
+    g_p[c] = interp.gather(met3d_arr, c);
+    dg_p[c] = interp.gather_deriv(met3d_arr, c);
+  }
+
   calc_rhs_geodesic(dtmom, dtpos, mom, alp_p, beta_p, g_p, dalp_p, dbeta_p,
                     dg_p);
 }
