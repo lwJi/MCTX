@@ -150,9 +150,6 @@ void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
     });
   }
 
-  // move particles that crossed tiles/ranks during substep 1
-  this->Redistribute();
-
   // RK2 (midpoint): substep 2
   // Compute k2 at midpoint; finish with y^{n+1} = y^n + dt*k2.
   for (ParIterType pti(*this, lev); pti.isValid(); ++pti) {
