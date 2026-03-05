@@ -3,16 +3,11 @@
 #include "../wolfram/particles_geodesic.hxx"
 #include "Particles.hxx"
 
-#include <driver.hxx>
-
 #include <fstream>
 
 namespace NuParticleContainers {
 
-using namespace Loop;
 using namespace Particles;
-
-std::vector<std::unique_ptr<NuParticleContainer>> g_nupcs;
 
 NuParticleContainer::NuParticleContainer(amrex::AmrCore *amr_core)
     : Container(amr_core) {
@@ -179,7 +174,7 @@ void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
   this->Redistribute();
 }
 
-void NuParticleContainer::OutputParticlesAscii(CCTK_ARGUMENTS) {
+void NuParticleContainer::OutputParticlesAscii(const cGH *cctkGH) {
   DECLARE_CCTK_PARAMETERS;
 
   const int it = cctkGH->cctk_iteration;
@@ -259,7 +254,7 @@ void NuParticleContainer::OutputParticlesAscii(CCTK_ARGUMENTS) {
   }
 }
 
-void NuParticleContainer::OutputParticlesPlot(CCTK_ARGUMENTS) {
+void NuParticleContainer::OutputParticlesPlot(const cGH *cctkGH) {
   DECLARE_CCTK_PARAMETERS;
 
   const int it = cctkGH->cctk_iteration;
@@ -272,7 +267,7 @@ void NuParticleContainer::OutputParticlesPlot(CCTK_ARGUMENTS) {
   }
 }
 
-void NuParticleContainer::OutputParticlesCheckpoint(CCTK_ARGUMENTS) {
+void NuParticleContainer::OutputParticlesCheckpoint(const cGH *cctkGH) {
   DECLARE_CCTK_PARAMETERS;
 
   const int it = cctkGH->cctk_iteration;
@@ -292,28 +287,6 @@ void NuParticleContainer::OutputParticlesCheckpoint(CCTK_ARGUMENTS) {
 void NuParticleContainer::RestartParticles(const std::string &dir) {
   amrex::Print() << "  Restarting particles from " << dir << "\n";
   this->Restart(dir, "particles");
-}
-
-extern "C" void NuParticleContainers_Setup(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_PARAMETERS;
-
-  for (int patch = 0; patch < CarpetX::ghext->num_patches(); ++patch) {
-    const auto &patchdata = CarpetX::ghext->patchdata.at(patch);
-    g_nupcs.emplace_back(
-        std::make_unique<NuParticleContainer>(patchdata.amrcore.get()));
-  } // for patch
-}
-
-extern "C" void NuParticleContainers_Restart(CCTK_ARGUMENTS) {
-  DECLARE_CCTK_PARAMETERS;
-
-  const std::string dir(checkpoint_particle_dir);
-  if (dir.empty())
-    return;
-
-  for (int patch = 0; patch < CarpetX::ghext->num_patches(); ++patch) {
-    g_nupcs.at(patch)->RestartParticles(dir);
-  }
 }
 
 } // namespace NuParticleContainers

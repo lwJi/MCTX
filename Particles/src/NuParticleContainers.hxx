@@ -2,7 +2,6 @@
 #define NUPARTICLECONTAINERS_HXX
 
 #include <cctk.h>
-#include <cctk_Arguments.h>
 
 #include <AMReX_AmrParticles.H>
 #include <AMReX_Particles.H>
@@ -37,11 +36,11 @@ public:
                               const amrex::MultiFab &met3d, CCTK_REAL dt,
                               const int lev);
 
-  void OutputParticlesAscii(CCTK_ARGUMENTS);
+  void OutputParticlesAscii(const cGH *cctkGH);
 
-  void OutputParticlesPlot(CCTK_ARGUMENTS);
+  void OutputParticlesPlot(const cGH *cctkGH);
 
-  void OutputParticlesCheckpoint(CCTK_ARGUMENTS);
+  void OutputParticlesCheckpoint(const cGH *cctkGH);
 
   void RestartParticles(const std::string &dir);
 };
