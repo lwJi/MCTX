@@ -202,17 +202,17 @@ extern "C" void TestNuPcsArdBH_InitParticles(CCTK_ARGUMENTS) {
 
   for (int patch = 0; patch < ghext->num_patches(); ++patch) {
     auto &pc = g_nupcs.at(patch);
-    pc->OutputParticlesAscii(CCTK_PASS_CTOC);
+    pc->OutputParticlesAscii(cctkGH);
   } // for patch
 
   for (int patch = 0; patch < ghext->num_patches(); ++patch) {
     auto &pc = g_nupcs.at(patch);
-    pc->OutputParticlesPlot(CCTK_PASS_CTOC);
+    pc->OutputParticlesPlot(cctkGH);
   } // for patch
 
   for (int patch = 0; patch < ghext->num_patches(); ++patch) {
     auto &pc = g_nupcs.at(patch);
-    pc->OutputParticlesCheckpoint(CCTK_PASS_CTOC);
+    pc->OutputParticlesCheckpoint(cctkGH);
   } // for patch
 }
 
@@ -259,17 +259,17 @@ extern "C" void TestNuPcsArdBH_PushAndDeposeParticles(CCTK_ARGUMENTS) {
 
   for (int patch = 0; patch < ghext->num_patches(); ++patch) {
     auto &pc = g_nupcs.at(patch);
-    pc->OutputParticlesAscii(CCTK_PASS_CTOC);
+    pc->OutputParticlesAscii(cctkGH);
   } // for patch
 
   for (int patch = 0; patch < ghext->num_patches(); ++patch) {
     auto &pc = g_nupcs.at(patch);
-    pc->OutputParticlesPlot(CCTK_PASS_CTOC);
+    pc->OutputParticlesPlot(cctkGH);
   } // for patch
 
   for (int patch = 0; patch < ghext->num_patches(); ++patch) {
     auto &pc = g_nupcs.at(patch);
-    pc->OutputParticlesCheckpoint(CCTK_PASS_CTOC);
+    pc->OutputParticlesCheckpoint(cctkGH);
   } // for patch
 }
 
