@@ -20,19 +20,6 @@ struct PIdx {
   };
 };
 
-// Runtime SoA scratch indices (0-based into m_runtime_rdata)
-struct RIdx {
-  enum {
-    x0 = 0,
-    y0,
-    z0,
-    px0,
-    py0,
-    pz0,
-    nruntime // = 6
-  };
-};
-
 // Pure SoA container with AmrCore tracking
 using Container =
     amrex::AmrParticleContainer_impl<amrex::SoAParticle<PIdx::nattribs, 0>,

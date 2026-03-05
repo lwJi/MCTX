@@ -17,13 +17,6 @@ std::vector<std::unique_ptr<NuParticleContainer>> g_nupcs;
 NuParticleContainer::NuParticleContainer(amrex::AmrCore *amr_core)
     : Container(amr_core) {
   SetSoACompileTimeNames({"x", "y", "z", "px", "py", "pz"}, {});
-  // Runtime SoA scratch for RK2 midpoint method
-  AddRealComp("x0");
-  AddRealComp("y0");
-  AddRealComp("z0");
-  AddRealComp("px0");
-  AddRealComp("py0");
-  AddRealComp("pz0");
 }
 
 template <typename T>
@@ -109,8 +102,7 @@ void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
   const auto plo = Geom(lev).ProbLoArray();
   const CCTK_REAL half_dt = CCTK_REAL(0.5) * dt;
 
-  // RK2 (midpoint): substep 1
-  // Save y^n in SoA, compute k1 as temps, advance to y^{n+1/2} in-place.
+  // RK2 (midpoint): both substeps in a single tile loop
   for (ParIterType pti(*this, lev); pti.isValid(); ++pti) {
     const int np = pti.numParticles();
     auto ptd = pti.GetParticleTile().getParticleTileData();
@@ -119,65 +111,61 @@ void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
     auto const shift_arr = shift.array(pti);
     auto const met3d_arr = met3d.array(pti);
 
+    // Tile-local scratch: packed [x0|y0|z0|px0|py0|pz0], each segment np long
+    amrex::Gpu::DeviceVector<CCTK_REAL> scratch(6 * np);
+    auto *const x0 = scratch.data();
+    auto *const y0 = scratch.data() + np;
+    auto *const z0 = scratch.data() + 2 * np;
+    auto *const px0 = scratch.data() + 3 * np;
+    auto *const py0 = scratch.data() + 4 * np;
+    auto *const pz0 = scratch.data() + 5 * np;
+
+    // Substep 1: save y^n, compute k1, advance to y^{n+1/2}
     amrex::ParallelFor(np, [=] CCTK_DEVICE(int i) noexcept {
-      // save y^n into runtime scratch
-      ptd.m_runtime_rdata[RIdx::x0][i] = ptd.pos(0, i);
-      ptd.m_runtime_rdata[RIdx::y0][i] = ptd.pos(1, i);
-      ptd.m_runtime_rdata[RIdx::z0][i] = ptd.pos(2, i);
-      ptd.m_runtime_rdata[RIdx::px0][i] = ptd.rdata(PIdx::px)[i];
-      ptd.m_runtime_rdata[RIdx::py0][i] = ptd.rdata(PIdx::py)[i];
-      ptd.m_runtime_rdata[RIdx::pz0][i] = ptd.rdata(PIdx::pz)[i];
+      // save y^n into tile-local scratch
+      x0[i] = ptd.pos(0, i);
+      y0[i] = ptd.pos(1, i);
+      z0[i] = ptd.pos(2, i);
+      px0[i] = ptd.rdata(PIdx::px)[i];
+      py0[i] = ptd.rdata(PIdx::py)[i];
+      pz0[i] = ptd.rdata(PIdx::pz)[i];
 
       const VectR pos0{ptd.pos(0, i), ptd.pos(1, i), ptd.pos(2, i)};
       const VectR mom0{ptd.rdata(PIdx::px)[i], ptd.rdata(PIdx::py)[i],
                        ptd.rdata(PIdx::pz)[i]};
 
-      // k1 = f(y^n)  (temps only)
+      // k1 = f(y^n)
       VectR k1_m{}, k1_x{};
       gather_fields_calcrhs_at_pos(k1_m, k1_x, mom0, pos0, lapse_arr, shift_arr,
                                    met3d_arr, plo, dxi);
 
-      // y^{n+1/2} = y^n + (dt/2)*k1   (write midpoint in-place)
-      ptd.pos(0, i) = ptd.m_runtime_rdata[RIdx::x0][i] + half_dt * k1_x[0];
-      ptd.pos(1, i) = ptd.m_runtime_rdata[RIdx::y0][i] + half_dt * k1_x[1];
-      ptd.pos(2, i) = ptd.m_runtime_rdata[RIdx::z0][i] + half_dt * k1_x[2];
-      ptd.rdata(PIdx::px)[i] =
-          ptd.m_runtime_rdata[RIdx::px0][i] + half_dt * k1_m[0];
-      ptd.rdata(PIdx::py)[i] =
-          ptd.m_runtime_rdata[RIdx::py0][i] + half_dt * k1_m[1];
-      ptd.rdata(PIdx::pz)[i] =
-          ptd.m_runtime_rdata[RIdx::pz0][i] + half_dt * k1_m[2];
+      // y^{n+1/2} = y^n + (dt/2)*k1
+      ptd.pos(0, i) = x0[i] + half_dt * k1_x[0];
+      ptd.pos(1, i) = y0[i] + half_dt * k1_x[1];
+      ptd.pos(2, i) = z0[i] + half_dt * k1_x[2];
+      ptd.rdata(PIdx::px)[i] = px0[i] + half_dt * k1_m[0];
+      ptd.rdata(PIdx::py)[i] = py0[i] + half_dt * k1_m[1];
+      ptd.rdata(PIdx::pz)[i] = pz0[i] + half_dt * k1_m[2];
     });
-  }
 
-  // RK2 (midpoint): substep 2
-  // Compute k2 at midpoint; finish with y^{n+1} = y^n + dt*k2.
-  for (ParIterType pti(*this, lev); pti.isValid(); ++pti) {
-    const int np = pti.numParticles();
-    auto ptd = pti.GetParticleTile().getParticleTileData();
-
-    auto const lapse_arr = lapse.array(pti);
-    auto const shift_arr = shift.array(pti);
-    auto const met3d_arr = met3d.array(pti);
-
+    // Substep 2: compute k2 at midpoint, write y^{n+1} = y^n + dt*k2
     amrex::ParallelFor(np, [=] CCTK_DEVICE(int i) noexcept {
-      // midpoint state
       const VectR posh{ptd.pos(0, i), ptd.pos(1, i), ptd.pos(2, i)};
       const VectR momh{ptd.rdata(PIdx::px)[i], ptd.rdata(PIdx::py)[i],
                        ptd.rdata(PIdx::pz)[i]};
 
-      // k2 = f(y^{n+1/2})  (temps only)
+      // k2 = f(y^{n+1/2})
       VectR k2_m{}, k2_x{};
       gather_fields_calcrhs_at_pos(k2_m, k2_x, momh, posh, lapse_arr, shift_arr,
                                    met3d_arr, plo, dxi);
 
-      // y^{n+1} = y^n + dt*k2  (use saved y^n from runtime scratch)
-      ptd.pos(0, i) = ptd.m_runtime_rdata[RIdx::x0][i] + dt * k2_x[0];
-      ptd.pos(1, i) = ptd.m_runtime_rdata[RIdx::y0][i] + dt * k2_x[1];
-      ptd.pos(2, i) = ptd.m_runtime_rdata[RIdx::z0][i] + dt * k2_x[2];
-      ptd.rdata(PIdx::px)[i] = ptd.m_runtime_rdata[RIdx::px0][i] + dt * k2_m[0];
-      ptd.rdata(PIdx::py)[i] = ptd.m_runtime_rdata[RIdx::py0][i] + dt * k2_m[1];
-      ptd.rdata(PIdx::pz)[i] = ptd.m_runtime_rdata[RIdx::pz0][i] + dt * k2_m[2];
+      // y^{n+1} = y^n + dt*k2
+      ptd.pos(0, i) = x0[i] + dt * k2_x[0];
+      ptd.pos(1, i) = y0[i] + dt * k2_x[1];
+      ptd.pos(2, i) = z0[i] + dt * k2_x[2];
+      ptd.rdata(PIdx::px)[i] = px0[i] + dt * k2_m[0];
+      ptd.rdata(PIdx::py)[i] = py0[i] + dt * k2_m[1];
+      ptd.rdata(PIdx::pz)[i] = pz0[i] + dt * k2_m[2];
 
       // Depose
       if (ptd.pos(0, i) > phi0[0] || ptd.pos(0, i) < plo0[0] ||
