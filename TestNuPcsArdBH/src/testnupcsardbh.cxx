@@ -54,9 +54,10 @@ extern "C" void TestNuPcsArdBH_InitParticles(CCTK_ARGUMENTS) {
     const int lev = 0;
 
     // Phase 1: Use AMReX InitRandom for positions + zero momenta
-    // pdata.real_array_data: slots 0-2 are positions (set by InitRandom),
-    //                        slots 3-5 are px, py, pz (set to 0, randomized
-    //                        below)
+    // For SoA particles, InitRandom randomly generates positions into SoA
+    // slots 0-2 (ignoring pdata.real_array_data[0..2]), and copies
+    // pdata.real_array_data[3..5] into slots 3-5 (px, py, pz → set to 0,
+    // then randomized below).
     NuParticleContainer::ParticleInitData pdata = {
         {}, {}, {0.0, 0.0, 0.0, 0.0, 0.0, 0.0}, {}};
 
