@@ -63,7 +63,8 @@ extern "C" void TestNuPcsArdBH_InitParticles(CCTK_ARGUMENTS) {
 
     // Constrain positions to the target cell near (5.05, 5.05, 0)
     const auto dx = pc->Geom(lev).CellSizeArray();
-    RealBox containing_bx({5.0, 5.0, -dx[2]}, {5.0 + dx[0], 5.0 + dx[1], 0.0});
+    RealBox containing_bx({5.0, 5.0, -0.5 * dx[2]},
+                          {5.0 + dx[0], 5.0 + dx[1], 0.5 * dx[2]});
 
     pc->InitRandom(num_particles, random_seed, pdata, true, containing_bx);
 
