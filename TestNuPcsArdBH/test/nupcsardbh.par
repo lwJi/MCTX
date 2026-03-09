@@ -47,6 +47,8 @@ CarpetX::regrid_error_threshold = 4.
 CarpetX::max_num_levels = 1
 
 TestNuPcsArdBH::BHmass = 0.0
+TestNuPcsArdBH::num_particles = 512
+TestNuPcsArdBH::random_seed = 42
 
 IO::out_dir = $parfile
 IO::out_every = 32
