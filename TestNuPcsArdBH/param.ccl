@@ -4,3 +4,13 @@ CCTK_REAL BHmass "BH mass" STEERABLE=always
 {
   0:* :: ""
 } 1.0
+
+CCTK_INT num_particles "Number of particles to create" STEERABLE=never
+{
+  1:* :: "positive"
+} 512
+
+CCTK_INT random_seed "Random seed for particle initialization" STEERABLE=never
+{
+  1:* :: "positive"
+} 42

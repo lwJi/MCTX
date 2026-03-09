@@ -49,171 +49,51 @@ extern "C" void TestNuPcsArdBH_InitFields(CCTK_ARGUMENTS) {
 extern "C" void TestNuPcsArdBH_InitParticles(CCTK_ARGUMENTS) {
   DECLARE_CCTK_PARAMETERS;
 
-  const array<int, 3> nppc{8, 8, 8};
-
   for (int patch = 0; patch < ghext->num_patches(); ++patch) {
     auto &pc = g_nupcs.at(patch);
-
-    // Init Particles
     const int lev = 0;
 
+    // Phase 1: Use AMReX InitRandom for positions + zero momenta
+    // pdata.real_array_data: slots 0-2 are positions (set by InitRandom),
+    //                        slots 3-5 are px, py, pz (set to 0, randomized
+    //                        below)
+    NuParticleContainer::ParticleInitData pdata = {
+        {}, {}, {0.0, 0.0, 0.0, 0.0, 0.0, 0.0}, {}};
+
+    // Constrain positions to the target cell near (5.05, 5.05, 0)
     const auto dx = pc->Geom(lev).CellSizeArray();
-    const auto p_lo = pc->Geom(lev).ProbLoArray();
-    const auto p_hi = pc->Geom(lev).ProbHiArray();
+    RealBox containing_bx({5.0, 5.0, -dx[2]}, {5.0 + dx[0], 5.0 + dx[1], 0.0});
 
-    const int num_ppc = nppc[0] * nppc[1] * nppc[2];
+    pc->InitRandom(num_particles, random_seed, pdata, true, containing_bx);
 
-    for (MFIter mfi = pc->MakeMFIter(lev); mfi.isValid(); ++mfi) {
-      const Box &tile_box = mfi.tilebox();
-
-      const auto lo = amrex::lbound(tile_box);
-      const auto hi = amrex::ubound(tile_box);
-
-      Gpu::ManagedVector<unsigned int> counts(tile_box.numPts(), 0);
-      unsigned int *pcount = counts.dataPtr();
-
-      Gpu::ManagedVector<unsigned int> offsets(tile_box.numPts());
-      unsigned int *poffset = offsets.dataPtr();
-
-      // Counting pass: figure out exactly how many particles need to be created
-      // in each grid cell
-      amrex::ParallelFor(
-          tile_box, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
-            // Select cells
-            Real xc = p_lo[0] + (i + 0.5) * dx[0];
-            Real yc = p_lo[1] + (j + 0.5) * dx[1];
-            Real zc = p_lo[2] + (k + 0.5) * dx[2];
-
-            if (std::abs(xc - 5.05) > dx[0] / 2 ||
-                std::abs(yc - 5.05) > dx[1] / 2 || std::abs(zc) > dx[2] / 2)
-              return;
-
-            for (int i_part = 0; i_part < num_ppc; i_part++) {
-              // Calculates a unique 1D index (cellid) from the 3D cell index
-              // (i, j, k). This maps the 3D grid cell to a 1D memory location
-              // in the counts array.
-              int ix = i - lo.x;
-              int iy = j - lo.y;
-              int iz = k - lo.z;
-              int nx = hi.x - lo.x + 1;
-              int ny = hi.y - lo.y + 1;
-              int nz = hi.z - lo.z + 1;
-              unsigned int uix = amrex::min(nx - 1, amrex::max(0, ix));
-              unsigned int uiy = amrex::min(ny - 1, amrex::max(0, iy));
-              unsigned int uiz = amrex::min(nz - 1, amrex::max(0, iz));
-              unsigned int cellid = (uix * ny + uiy) * nz + uiz;
-
-              // One valid particle should created here.
-              pcount[cellid] += 1;
-            }
-          });
-
-      // Prefix sum: this is the key that lets the second pass write data in
-      // parallel without conflicts
-      Gpu::exclusive_scan(counts.begin(), counts.end(), offsets.begin());
-
-      int num_to_add =
-          offsets[tile_box.numPts() - 1] + counts[tile_box.numPts() - 1];
-
-      auto &particle_tile = pc->DefineAndReturnParticleTile(lev, mfi);
-
-      // Determines the current size and the required new size
-      auto old_size = particle_tile.numParticles();
-      auto new_size = old_size + num_to_add;
-
-      // Crucially, this resizes the container only once, which is much more
-      // efficient than adding particles one by one.
-      particle_tile.resize(new_size);
-
-      if (num_to_add == 0)
-        continue;
-
+    // Phase 2: Randomize momenta with isotropic sampling
+    for (ParIterType pti(*pc, lev); pti.isValid(); ++pti) {
+      auto &particle_tile = pti.GetParticleTile();
       auto ptd = particle_tile.getParticleTileData();
+      const int np = pti.numParticles();
 
-      int procID = ParallelDescriptor::MyProc();
-
-      // Placement pass:
       amrex::ParallelForRNG(
-          tile_box,
-          [=] AMREX_GPU_DEVICE(int i, int j, int k,
-                               amrex::RandomEngine const &engine) noexcept {
-            // Select cells
-            Real xc = p_lo[0] + (i + 0.5) * dx[0];
-            Real yc = p_lo[1] + (j + 0.5) * dx[1];
-            Real zc = p_lo[2] + (k + 0.5) * dx[2];
-
-            if (std::abs(xc - 5.05) > dx[0] / 2 ||
-                std::abs(yc - 5.05) > dx[1] / 2 || std::abs(zc) > dx[2] / 2)
-              return;
-
-            // Calculate cellid
-            int ix = i - lo.x;
-            int iy = j - lo.y;
-            int iz = k - lo.z;
-            int nx = hi.x - lo.x + 1;
-            int ny = hi.y - lo.y + 1;
-            int nz = hi.z - lo.z + 1;
-            unsigned int uix = amrex::min(nx - 1, amrex::max(0, ix));
-            unsigned int uiy = amrex::min(ny - 1, amrex::max(0, iy));
-            unsigned int uiz = amrex::min(nz - 1, amrex::max(0, iz));
-            unsigned int cellid = (uix * ny + uiy) * nz + uiz;
-
-            // Retrievers the starting write index (pidx) for the current cell
-            // (i, j, k) from the offsets array that was calculated by the
-            // exclusive_scan
-            int pidx = old_size + poffset[cellid];
-
-            for (int i_part = 0; i_part < num_ppc; i_part++) {
-              Real ratio[3];
-              ratio[0] = Random(engine);
-              ratio[1] = Random(engine);
-              ratio[2] = Random(engine);
-
-              Real x = p_lo[0] + (i + ratio[0]) * dx[0];
-              Real y = p_lo[1] + (j + ratio[1]) * dx[1];
-              Real z = p_lo[2] + (k + ratio[2]) * dx[2];
-
-              // Sampling initial momentum
-              const Real pt = 1.0;
-              Real costh = Random(engine) * 2 - 1;
-              Real ph = Random(engine) * (2 * M_PI);
-              Real sinth = std::sqrt(amrex::max(Real(0), 1 - costh * costh));
-              Real cosph = std::cos(ph);
-              Real sinph = std::sin(ph);
-
-              // Write particle properties via PTD proxy
-              ptd.id(pidx) = pidx + 1;
-              ptd.cpu(pidx) = procID;
-              ptd.pos(0, pidx) = x;
-              ptd.pos(1, pidx) = y;
-              ptd.pos(2, pidx) = z;
-              ptd.rdata(PIdx::px)[pidx] = pt * sinth * cosph;
-              ptd.rdata(PIdx::py)[pidx] = pt * sinth * sinph;
-              ptd.rdata(PIdx::pz)[pidx] = pt * costh;
-
-              ++pidx;
-            }
+          np, [=] AMREX_GPU_DEVICE(int i,
+                                   amrex::RandomEngine const &engine) noexcept {
+            const Real pt = 1.0;
+            Real costh = Random(engine) * 2 - 1;
+            Real ph = Random(engine) * (2 * M_PI);
+            Real sinth = std::sqrt(amrex::max(Real(0), 1 - costh * costh));
+            ptd.rdata(PIdx::px)[i] = pt * sinth * std::cos(ph);
+            ptd.rdata(PIdx::py)[i] = pt * sinth * std::sin(ph);
+            ptd.rdata(PIdx::pz)[i] = pt * costh;
           });
-    } // for mfi
+    }
   } // for patch
 
   // IO
   assert(ghext->num_patches() == 1);
-
   for (int patch = 0; patch < ghext->num_patches(); ++patch) {
     auto &pc = g_nupcs.at(patch);
     pc->OutputParticlesAscii(cctkGH);
-  } // for patch
-
-  for (int patch = 0; patch < ghext->num_patches(); ++patch) {
-    auto &pc = g_nupcs.at(patch);
     pc->OutputParticlesPlot(cctkGH);
-  } // for patch
-
-  for (int patch = 0; patch < ghext->num_patches(); ++patch) {
-    auto &pc = g_nupcs.at(patch);
     pc->OutputParticlesCheckpoint(cctkGH);
-  } // for patch
+  }
 }
 
 extern "C" void TestNuPcsArdBH_PushAndDeposeParticles(CCTK_ARGUMENTS) {
@@ -260,17 +140,9 @@ extern "C" void TestNuPcsArdBH_PushAndDeposeParticles(CCTK_ARGUMENTS) {
   for (int patch = 0; patch < ghext->num_patches(); ++patch) {
     auto &pc = g_nupcs.at(patch);
     pc->OutputParticlesAscii(cctkGH);
-  } // for patch
-
-  for (int patch = 0; patch < ghext->num_patches(); ++patch) {
-    auto &pc = g_nupcs.at(patch);
     pc->OutputParticlesPlot(cctkGH);
-  } // for patch
-
-  for (int patch = 0; patch < ghext->num_patches(); ++patch) {
-    auto &pc = g_nupcs.at(patch);
     pc->OutputParticlesCheckpoint(cctkGH);
-  } // for patch
+  }
 }
 
 } // namespace TestNuPcsArdBH
