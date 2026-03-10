@@ -163,13 +163,13 @@ CarpetX/ODESolvers
 CarpetX/Subcycling
 CarpetX/TmunuBaseX
 
-# CarpetXUtils thorns
+# UtilForge thorns
 !TARGET   = $ARR
 !TYPE     = git
-!URL      = https://github.com/lwJi/CarpetXUtils.git
+!URL      = https://github.com/lwJi/UtilForge.git
 !REPO_PATH= $2
 !CHECKOUT =
-CarpetXUtils/CXUtils
+UtilForge/UtilForge
 
 # MCTX thorns
 !TARGET   = $ARR
