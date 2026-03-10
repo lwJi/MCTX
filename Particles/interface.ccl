@@ -3,5 +3,6 @@
 IMPLEMENTS: Particles
 
 USES INCLUDE HEADER: driver.hxx
+USES INCLUDE HEADER: util_powerinline.hxx
 
 INCLUDES HEADER: NuParticleContainers.hxx IN NuParticleContainers.hxx
