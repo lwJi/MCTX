@@ -1,6 +1,6 @@
 # Configuration definitions for thorn Particles
 
-REQUIRES CarpetX Loop
+REQUIRES CarpetX Loop UtilForge
 
 PROVIDES Particles
 {

@@ -4,10 +4,11 @@
 #ifndef PARTICLES_GEODESIC_HXX
 #define PARTICLES_GEODESIC_HXX
 
-#include "particles_powerinline.hxx"
+#include "util_powerinline.hxx"
 #include "../src/Particles.hxx"
 
 namespace Particles {
+using namespace UtilForge;
 
 CCTK_HOST CCTK_DEVICE inline void
 calc_rhs_geodesic(VectR &dtpmom, VectR &dtxpos, const VectR &pmom,

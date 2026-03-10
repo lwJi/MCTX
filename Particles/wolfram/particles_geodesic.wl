@@ -41,11 +41,12 @@ SetOutputFile[FileNameJoin[{Directory[], "particles_geodesic.hxx"}]];
 
 SetMainPrint[
 
-  pr["#include \"particles_powerinline.hxx\""];
+  pr["#include \"util_powerinline.hxx\""];
   pr["#include \"../src/Particles.hxx\""];
   pr[];
 
   pr["namespace Particles {"];
+  pr["using namespace UtilForge;"];
   pr[];
 
   pr["CCTK_HOST CCTK_DEVICE inline void"];
