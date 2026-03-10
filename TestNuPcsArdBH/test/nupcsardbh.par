@@ -2,7 +2,8 @@ ActiveThorns = "
   ADMBaseX
   CarpetX
   IOUtil
-  #Particles
+  Particles
+  SingleBH
   TestNuPcsArdBH
 "
 
@@ -46,7 +47,10 @@ Cactus::cctk_itlast = 128
 CarpetX::regrid_error_threshold = 4.
 CarpetX::max_num_levels = 1
 
-TestNuPcsArdBH::BHmass = 0.0
+ADMBaseX::initial_data = "Schwarzschild"
+
+SingleBH::mass = 0.0
+
 TestNuPcsArdBH::num_particles = 512
 TestNuPcsArdBH::random_seed = 42
 

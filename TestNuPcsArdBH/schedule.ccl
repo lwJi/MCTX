@@ -1,15 +1,6 @@
 # Schedule definitions for thorn TestNuPcsArdBH
 
-SCHEDULE TestNuPcsArdBH_InitFields AT initial AFTER NuParticleContainers_Setup
-{
-  LANG: C
-  OPTIONS: local
-  WRITES: ADMBaseX::lapse(everywhere)
-  WRITES: ADMBaseX::shift(everywhere)
-  WRITES: ADMBaseX::metric(everywhere)
-} "Initialize metric fields"
-
-SCHEDULE TestNuPcsArdBH_InitParticles AT initial AFTER TestNuPcsArdBH_InitFields
+SCHEDULE TestNuPcsArdBH_InitParticles AT initial AFTER SingleBH_Initial
 {
   LANG: C
   OPTIONS: global
