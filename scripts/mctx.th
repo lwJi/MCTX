@@ -171,6 +171,14 @@ CarpetX/TmunuBaseX
 !CHECKOUT =
 UtilForge/UtilForge
 
+# NRForge thorns
+!TARGET   = $ARR
+!TYPE     = git
+!URL      = https://github.com/lwJi/NRForge.git
+!REPO_PATH= $2
+!CHECKOUT =
+NRForge/SingleBH
+
 # MCTX thorns
 !TARGET   = $ARR
 !TYPE     = ignore
