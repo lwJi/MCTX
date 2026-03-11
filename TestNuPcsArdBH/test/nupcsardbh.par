@@ -53,6 +53,12 @@ SingleBH::mass = 0.0
 
 TestNuPcsArdBH::num_particles = 512
 TestNuPcsArdBH::random_seed = 42
+TestNuPcsArdBH::containing_bx_xmin = +5.0
+TestNuPcsArdBH::containing_bx_xmax = +5.0 + 0.1
+TestNuPcsArdBH::containing_bx_ymin = +5.0
+TestNuPcsArdBH::containing_bx_ymax = +5.0 + 0.1
+TestNuPcsArdBH::containing_bx_zmin = -0.05
+TestNuPcsArdBH::containing_bx_zmax = +0.05
 
 IO::out_dir = $parfile
 IO::out_every = 32
