@@ -31,7 +31,7 @@ extern "C" void TestNuPcsArdBH_InitParticles(CCTK_ARGUMENTS) {
     // pdata.real_array_data[3..5] into slots 3-5 (px, py, pz → set to 0,
     // then randomized below).
     NuParticleContainer::ParticleInitData pdata = {
-        {}, {}, {0.0, 0.0, 0.0, 0.0, 0.0, 0.0}, {}};
+        {}, {}, {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0}, {0, 0}};
 
     // Constrain positions to the target cell
     const auto dx = pc->Geom(lev).CellSizeArray();
@@ -57,6 +57,8 @@ extern "C" void TestNuPcsArdBH_InitParticles(CCTK_ARGUMENTS) {
             ptd.rdata(PIdx::px)[i] = pt * sinth * std::cos(ph);
             ptd.rdata(PIdx::py)[i] = pt * sinth * std::sin(ph);
             ptd.rdata(PIdx::pz)[i] = pt * costh;
+            ptd.idata(PIdxInt::species)[i] = 0;
+            ptd.idata(PIdxInt::cell_id)[i] = 0;
           });
     }
   } // for patch
