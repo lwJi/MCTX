@@ -15,16 +15,26 @@ struct PIdx {
     px = AMREX_SPACEDIM,
     py,
     pz,
-    nattribs // = 6
+    time,
+    num_neutrinos,
+    nattribs // = 8
+  };
+};
+
+struct PIdxInt {
+  enum {
+    species = 0,
+    cell_id,
+    nattribs // = 2
   };
 };
 
 // Pure SoA container with AmrCore tracking
-using Container =
-    amrex::AmrParticleContainer_impl<amrex::SoAParticle<PIdx::nattribs, 0>,
-                                     PIdx::nattribs, 0>;
+using Container = amrex::AmrParticleContainer_impl<
+    amrex::SoAParticle<PIdx::nattribs, PIdxInt::nattribs>, PIdx::nattribs,
+    PIdxInt::nattribs>;
 using ParticleTile = Container::ParticleTileType;
-using ParIterType = amrex::ParIterSoA<PIdx::nattribs, 0>;
+using ParIterType = amrex::ParIterSoA<PIdx::nattribs, PIdxInt::nattribs>;
 
 class NuParticleContainer : public Container {
 

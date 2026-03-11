@@ -11,7 +11,9 @@ using namespace Particles;
 
 NuParticleContainer::NuParticleContainer(amrex::AmrCore *amr_core)
     : Container(amr_core) {
-  SetSoACompileTimeNames({"x", "y", "z", "px", "py", "pz"}, {});
+  SetSoACompileTimeNames(
+      {"x", "y", "z", "px", "py", "pz", "time", "num_neutrinos"},
+      {"species", "cell_id"});
 }
 
 CCTK_HOST CCTK_DEVICE CCTK_ATTRIBUTE_ALWAYS_INLINE inline void
@@ -75,6 +77,25 @@ void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
     auto *const py0 = scratch.data() + 4 * np;
     auto *const pz0 = scratch.data() + 5 * np;
 
+    // Record starting cell index before the RK2 step
+    amrex::ParallelFor(np, [=] CCTK_DEVICE(int i) noexcept {
+      // Compute cell indices from particle position
+      const int ix = static_cast<int>(
+          amrex::Math::floor((ptd.pos(0, i) - plo[0]) * dxi[0]));
+      const int iy = static_cast<int>(
+          amrex::Math::floor((ptd.pos(1, i) - plo[1]) * dxi[1]));
+      const int iz = static_cast<int>(
+          amrex::Math::floor((ptd.pos(2, i) - plo[2]) * dxi[2]));
+      // Linearize: cellid = (ix * ny + iy) * nz + iz
+      const int nx =
+          static_cast<int>((phi0[0] - plo0[0]) * dxi[0] + CCTK_REAL(0.5));
+      const int ny =
+          static_cast<int>((phi0[1] - plo0[1]) * dxi[1] + CCTK_REAL(0.5));
+      const int nz =
+          static_cast<int>((phi0[2] - plo0[2]) * dxi[2] + CCTK_REAL(0.5));
+      ptd.idata(PIdxInt::cell_id)[i] = (ix * ny + iy) * nz + iz;
+    });
+
     // Substep 1: save y^n, compute k1, advance to y^{n+1/2}
     amrex::ParallelFor(np, [=] CCTK_DEVICE(int i) noexcept {
       // save y^n into tile-local scratch
@@ -128,6 +149,11 @@ void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
           ptd.pos(2, i) > phi0[2] || ptd.pos(2, i) < plo0[2])
         ptd.id(i) = -1;
     });
+
+    // Advance particle time
+    amrex::ParallelFor(np, [=] CCTK_DEVICE(int i) noexcept {
+      ptd.rdata(PIdx::time)[i] += dt;
+    });
   }
 
   // tidy after the full step
@@ -155,10 +181,10 @@ void NuParticleContainer::OutputParticlesAscii(const cGH *cctkGH) {
       if (!File.good())
         amrex::FileOpenFailed(name);
       File << nparticles << '\n'
-           << 0 << '\n'            // NStructReal
-           << 0 << '\n'            // NStructInt
-           << n_user_reals << '\n' // user SoA reals (positions excluded)
-           << 0 << '\n';           // NArrayInt
+           << 0 << '\n'                  // NStructReal
+           << 0 << '\n'                  // NStructInt
+           << n_user_reals << '\n'       // user SoA reals (positions excluded)
+           << PIdxInt::nattribs << '\n'; // NArrayInt
       File.close();
     }
 
@@ -174,10 +200,10 @@ void NuParticleContainer::OutputParticlesAscii(const cGH *cctkGH) {
           amrex::FileOpenFailed(name);
 
         for (int lev = 0; lev <= finestLevel(); ++lev) {
-          using PinnedTile =
-              amrex::ParticleTile<amrex::SoAParticle<PIdx::nattribs, 0>,
-                                  PIdx::nattribs, 0,
-                                  amrex::PolymorphicArenaAllocator>;
+          using PinnedTile = amrex::ParticleTile<
+              amrex::SoAParticle<PIdx::nattribs, PIdxInt::nattribs>,
+              PIdx::nattribs, PIdxInt::nattribs,
+              amrex::PolymorphicArenaAllocator>;
 
           for (const auto &kv : GetParticles(lev)) {
             PinnedTile pinned;
@@ -197,6 +223,9 @@ void NuParticleContainer::OutputParticlesAscii(const cGH *cctkGH) {
                 File << int(ptd.cpu(i)) << ' ';
                 for (int c = AMREX_SPACEDIM; c < PIdx::nattribs; ++c) {
                   File << ptd.rdata(c)[i] << ' ';
+                }
+                for (int c = 0; c < PIdxInt::nattribs; ++c) {
+                  File << ptd.idata(c)[i] << ' ';
                 }
                 File << '\n';
               }
@@ -237,8 +266,9 @@ void NuParticleContainer::OutputParticlesCheckpoint(const cGH *cctkGH) {
     amrex::Print() << "  Writing particle checkpoint " << dir << "\n";
 
     // Names for user SoA attributes (positions excluded for pure SoA)
-    const amrex::Vector<std::string> real_comp_names = {"px", "py", "pz"};
-    const amrex::Vector<std::string> int_comp_names = {};
+    const amrex::Vector<std::string> real_comp_names = {
+        "px", "py", "pz", "time", "num_neutrinos"};
+    const amrex::Vector<std::string> int_comp_names = {"species", "cell_id"};
 
     this->Checkpoint(dir, "particles", real_comp_names, int_comp_names);
   }
