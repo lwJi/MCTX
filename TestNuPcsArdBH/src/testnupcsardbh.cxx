@@ -50,13 +50,13 @@ extern "C" void TestNuPcsArdBH_InitParticles(CCTK_ARGUMENTS) {
       amrex::ParallelForRNG(
           np, [=] AMREX_GPU_DEVICE(int i,
                                    amrex::RandomEngine const &engine) noexcept {
-            const Real pt = 1.0;
+            const Real nu = 1.0;
             Real costh = Random(engine) * 2 - 1;
             Real ph = Random(engine) * (2 * M_PI);
             Real sinth = std::sqrt(amrex::max(Real(0), 1 - costh * costh));
-            ptd.rdata(PIdx::px)[i] = pt * sinth * std::cos(ph);
-            ptd.rdata(PIdx::py)[i] = pt * sinth * std::sin(ph);
-            ptd.rdata(PIdx::pz)[i] = pt * costh;
+            ptd.rdata(PIdx::px)[i] = nu * sinth * std::cos(ph);
+            ptd.rdata(PIdx::py)[i] = nu * sinth * std::sin(ph);
+            ptd.rdata(PIdx::pz)[i] = nu * costh;
             ptd.idata(PIdxInt::species)[i] = 0;
             ptd.idata(PIdxInt::cell_id)[i] = 0;
           });
