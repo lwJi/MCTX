@@ -1,10 +1,5 @@
 # Parameter definitions for thorn TestNuPcsArdBH
 
-CCTK_REAL BHmass "BH mass" STEERABLE=always
-{
-  0:* :: ""
-} 1.0
-
 CCTK_INT num_particles "Number of particles to create" STEERABLE=never
 {
   1:* :: "positive"
@@ -14,3 +9,34 @@ CCTK_INT random_seed "Random seed for particle initialization" STEERABLE=never
 {
   1:* :: "positive"
 } 42
+
+CCTK_REAL containing_bx_xmin "Spatial bounds for particle generation"
+{
+  *:* :: ""
+} -1.0
+
+CCTK_REAL containing_bx_xmax "Spatial bounds for particle generation"
+{
+  *:* :: ""
+} 1.0
+
+CCTK_REAL containing_bx_ymin "Spatial bounds for particle generation"
+{
+  *:* :: ""
+} -1.0
+
+CCTK_REAL containing_bx_ymax "Spatial bounds for particle generation"
+{
+  *:* :: ""
+} 1.0
+
+CCTK_REAL containing_bx_zmin "Spatial bounds for particle generation"
+{
+  *:* :: ""
+} -1.0
+
+CCTK_REAL containing_bx_zmax "Spatial bounds for particle generation"
+{
+  *:* :: ""
+} 1.0
+
