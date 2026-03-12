@@ -18,6 +18,10 @@ INT out_checkpoint_every "Output AMReX checkpoint every that many iterations" ST
   1:* :: "every that many iterations"
 } 0
 
+BOOLEAN out_escaped_tsv "Append escaped particles to TSV file" STEERABLE=always
+{
+} "no"
+
 STRING checkpoint_particle_dir "Directory to read particle checkpoint from for restart" STEERABLE=recover
 {
   "" :: "no restart"
