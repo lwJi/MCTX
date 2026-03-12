@@ -246,6 +246,7 @@ extern "C" void TestNuParticles_PushAndDeposeParticles(CCTK_ARGUMENTS) {
 
       pc->PushAndDeposeParticles(lapse, shift, met3d, dt, lev);
     }
+    pc->Redistribute();
   } // for patch
 
   // IO

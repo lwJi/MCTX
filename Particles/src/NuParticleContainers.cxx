@@ -155,9 +155,6 @@ void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
       ptd.rdata(PIdx::time)[i] += dt;
     });
   }
-
-  // tidy after the full step
-  this->Redistribute();
 }
 
 void NuParticleContainer::OutputParticlesAscii(const cGH *cctkGH) {
