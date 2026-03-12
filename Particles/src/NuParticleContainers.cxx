@@ -52,6 +52,8 @@ void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
                                                  const amrex::MultiFab &shift,
                                                  const amrex::MultiFab &met3d,
                                                  CCTK_REAL dt, const int lev) {
+  DECLARE_CCTK_PARAMETERS;
+
   const auto plo0 = Geom(0).ProbLoArray();
   const auto phi0 = Geom(0).ProbHiArray();
 
@@ -154,6 +156,59 @@ void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
     amrex::ParallelFor(np, [=] CCTK_DEVICE(int i) noexcept {
       ptd.rdata(PIdx::time)[i] += dt;
     });
+  }
+
+  // Output escaped particles (id < 0) before Redistribute destroys them
+  if (out_escaped_tsv) {
+    const std::string name = std::string(out_dir) + "/ptcl_escaped.tsv";
+
+    const int MyProc = amrex::ParallelDescriptor::MyProc();
+    for (int proc = 0; proc < amrex::ParallelDescriptor::NProcs(); ++proc) {
+      if (MyProc == proc) {
+        std::ofstream File(name, std::ios::out | std::ios::app);
+        File.precision(15);
+        if (!File.good())
+          amrex::FileOpenFailed(name);
+
+        using PinnedTile = amrex::ParticleTile<
+            amrex::SoAParticle<PIdx::nattribs, PIdxInt::nattribs>,
+            PIdx::nattribs, PIdxInt::nattribs,
+            amrex::PolymorphicArenaAllocator>;
+
+        for (const auto &kv : GetParticles(lev)) {
+          PinnedTile pinned;
+          pinned.define(NumRuntimeRealComps(), NumRuntimeIntComps(), nullptr,
+                        nullptr, amrex::The_Pinned_Arena());
+          pinned.resize(kv.second.numParticles());
+          amrex::copyParticles(pinned, kv.second);
+
+          const int np = pinned.numParticles();
+          auto ptd = pinned.getConstParticleTileData();
+
+          for (int i = 0; i < np; ++i) {
+            if (!ptd.id(i).is_valid()) {
+              File << ptd.pos(0, i) << ' ' << ptd.pos(1, i) << ' '
+                   << ptd.pos(2, i) << ' ';
+              File << int(ptd.id(i)) << ' ';
+              File << int(ptd.cpu(i)) << ' ';
+              for (int c = AMREX_SPACEDIM; c < PIdx::nattribs; ++c) {
+                File << ptd.rdata(c)[i] << ' ';
+              }
+              for (int c = 0; c < PIdxInt::nattribs; ++c) {
+                File << ptd.idata(c)[i] << ' ';
+              }
+              File << '\n';
+            }
+          }
+        }
+
+        File.flush();
+        File.close();
+        if (!File.good())
+          amrex::Abort("OutputEscapedParticles: problem writing file");
+      }
+      amrex::ParallelDescriptor::Barrier();
+    }
   }
 
   // tidy after the full step

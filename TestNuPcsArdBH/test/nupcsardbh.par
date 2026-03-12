@@ -78,3 +78,4 @@ CarpetX::out_tsv_vars = ""
 
 Particles::out_tsv_every = 32
 Particles::out_plot_every = 0
+Particles::out_escaped_tsv = "yes"
