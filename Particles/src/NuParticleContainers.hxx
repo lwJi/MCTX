@@ -17,7 +17,8 @@ struct PIdx {
     pz,
     time,
     num_neutrinos,
-    nattribs // = 8
+    pt,      // p_t = p_i beta^i - alpha sqrt(gamma^{ij} p_i p_j)
+    nattribs // = 9
   };
 };
 

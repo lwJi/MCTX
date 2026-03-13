@@ -281,7 +281,7 @@ invgam11*Power(pmom1,2) + 2*invgam12*pmom1*pmom2 + invgam22*Power(pmom2,2) +
 ;
 
 const auto
-pmomt
+pt
 =
 sqrt(p2)/ADMalpha
 ;
@@ -289,17 +289,17 @@ sqrt(p2)/ADMalpha
 
 dtxpos1
 =
-(invgam11*pmom1 + invgam12*pmom2 + invgam13*pmom3 - ADMbeta1*pmomt)/pmomt
+(invgam11*pmom1 + invgam12*pmom2 + invgam13*pmom3 - ADMbeta1*pt)/pt
 ;
 
 dtxpos2
 =
-(invgam12*pmom1 + invgam22*pmom2 + invgam23*pmom3 - ADMbeta2*pmomt)/pmomt
+(invgam12*pmom1 + invgam22*pmom2 + invgam23*pmom3 - ADMbeta2*pt)/pt
 ;
 
 dtxpos3
 =
-(invgam13*pmom1 + invgam23*pmom2 + invgam33*pmom3 - ADMbeta3*pmomt)/pmomt
+(invgam13*pmom1 + invgam23*pmom2 + invgam33*pmom3 - ADMbeta3*pt)/pt
 ;
 
 dtpmom1
@@ -307,8 +307,8 @@ dtpmom1
 -0.5*(dinvgam111*Power(pmom1,2) + 2*dinvgam121*pmom1*pmom2 +
      dinvgam221*Power(pmom2,2) + 2*dinvgam131*pmom1*pmom3 +
      2*dinvgam231*pmom2*pmom3 + dinvgam331*Power(pmom3,2) -
-     2*ADMdbeta11*pmom1*pmomt - 2*ADMdbeta21*pmom2*pmomt -
-     2*ADMdbeta31*pmom3*pmomt + 2*ADMalpha*ADMdalpha1*Power(pmomt,2))/pmomt
+     2*ADMdbeta11*pmom1*pt - 2*ADMdbeta21*pmom2*pt -
+     2*ADMdbeta31*pmom3*pt + 2*ADMalpha*ADMdalpha1*Power(pt,2))/pt
 ;
 
 dtpmom2
@@ -316,8 +316,8 @@ dtpmom2
 -0.5*(dinvgam112*Power(pmom1,2) + 2*dinvgam122*pmom1*pmom2 +
      dinvgam222*Power(pmom2,2) + 2*dinvgam132*pmom1*pmom3 +
      2*dinvgam232*pmom2*pmom3 + dinvgam332*Power(pmom3,2) -
-     2*ADMdbeta12*pmom1*pmomt - 2*ADMdbeta22*pmom2*pmomt -
-     2*ADMdbeta32*pmom3*pmomt + 2*ADMalpha*ADMdalpha2*Power(pmomt,2))/pmomt
+     2*ADMdbeta12*pmom1*pt - 2*ADMdbeta22*pmom2*pt -
+     2*ADMdbeta32*pmom3*pt + 2*ADMalpha*ADMdalpha2*Power(pt,2))/pt
 ;
 
 dtpmom3
@@ -325,8 +325,86 @@ dtpmom3
 -0.5*(dinvgam113*Power(pmom1,2) + 2*dinvgam123*pmom1*pmom2 +
      dinvgam223*Power(pmom2,2) + 2*dinvgam133*pmom1*pmom3 +
      2*dinvgam233*pmom2*pmom3 + dinvgam333*Power(pmom3,2) -
-     2*ADMdbeta13*pmom1*pmomt - 2*ADMdbeta23*pmom2*pmomt -
-     2*ADMdbeta33*pmom3*pmomt + 2*ADMalpha*ADMdalpha3*Power(pmomt,2))/pmomt
+     2*ADMdbeta13*pmom1*pt - 2*ADMdbeta23*pmom2*pt -
+     2*ADMdbeta33*pmom3*pt + 2*ADMalpha*ADMdalpha3*Power(pt,2))/pt
+;
+
+
+}
+
+CCTK_HOST CCTK_DEVICE inline void
+calc_pt(ScalR &pmomt, const VectR &pmom,
+        const ScalR ADMalpha, const VectR &ADMbeta, const SmatR &ADMgam) {
+
+const auto &ADMgam11 = ADMgam[0];
+const auto &ADMgam12 = ADMgam[1];
+const auto &ADMgam13 = ADMgam[2];
+const auto &ADMgam22 = ADMgam[3];
+const auto &ADMgam23 = ADMgam[4];
+const auto &ADMgam33 = ADMgam[5];
+const auto &ADMbeta1 = ADMbeta[0];
+const auto &ADMbeta2 = ADMbeta[1];
+const auto &ADMbeta3 = ADMbeta[2];
+
+const auto &pmom1 = pmom[0];
+const auto &pmom2 = pmom[1];
+const auto &pmom3 = pmom[2];
+
+const auto
+detinvgam
+=
+1/(-(Power(ADMgam13,2)*ADMgam22) + 2*ADMgam12*ADMgam13*ADMgam23 -
+    ADMgam11*Power(ADMgam23,2) - Power(ADMgam12,2)*ADMgam33 +
+    ADMgam11*ADMgam22*ADMgam33)
+;
+
+const auto
+invgam11
+=
+(-Power(ADMgam23,2) + ADMgam22*ADMgam33)*detinvgam
+;
+
+const auto
+invgam12
+=
+(ADMgam13*ADMgam23 - ADMgam12*ADMgam33)*detinvgam
+;
+
+const auto
+invgam13
+=
+(-(ADMgam13*ADMgam22) + ADMgam12*ADMgam23)*detinvgam
+;
+
+const auto
+invgam22
+=
+(-Power(ADMgam13,2) + ADMgam11*ADMgam33)*detinvgam
+;
+
+const auto
+invgam23
+=
+(ADMgam12*ADMgam13 - ADMgam11*ADMgam23)*detinvgam
+;
+
+const auto
+invgam33
+=
+(-Power(ADMgam12,2) + ADMgam11*ADMgam22)*detinvgam
+;
+
+const auto
+p2
+=
+invgam11*Power(pmom1,2) + 2*invgam12*pmom1*pmom2 + invgam22*Power(pmom2,2) +
+  2*invgam13*pmom1*pmom3 + 2*invgam23*pmom2*pmom3 + invgam33*Power(pmom3,2)
+;
+
+
+pmomt
+=
+ADMbeta1*pmom1 + ADMbeta2*pmom2 + ADMbeta3*pmom3 - ADMalpha*sqrt(p2)
 ;
 
 

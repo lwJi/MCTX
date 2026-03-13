@@ -31,7 +31,7 @@ extern "C" void TestNuPcsArdBH_InitParticles(CCTK_ARGUMENTS) {
     // pdata.real_array_data[3..5] into slots 3-5 (px, py, pz → set to 0,
     // then randomized below).
     NuParticleContainer::ParticleInitData pdata = {
-        {}, {}, {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0}, {0, 0}};
+        {}, {}, {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0}, {0, 0}};
 
     // Constrain positions to the target cell
     const auto dx = pc->Geom(lev).CellSizeArray();
