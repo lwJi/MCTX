@@ -23,7 +23,6 @@ extern "C" void TestNuPcsArdBH_InitParticles(CCTK_ARGUMENTS) {
 
   for (int patch = 0; patch < ghext->num_patches(); ++patch) {
     auto &pc = g_nupcs.at(patch);
-    const int lev = 0;
 
     // Phase 1: Use AMReX InitRandom for positions + zero momenta
     // For SoA particles, InitRandom randomly generates positions into SoA
@@ -34,7 +33,6 @@ extern "C" void TestNuPcsArdBH_InitParticles(CCTK_ARGUMENTS) {
         {}, {}, {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0}, {0, 0}};
 
     // Constrain positions to the target cell
-    const auto dx = pc->Geom(lev).CellSizeArray();
     RealBox containing_bx(
         {containing_bx_xmin, containing_bx_ymin, containing_bx_zmin},
         {containing_bx_xmax, containing_bx_ymax, containing_bx_zmax});
@@ -42,25 +40,30 @@ extern "C" void TestNuPcsArdBH_InitParticles(CCTK_ARGUMENTS) {
     pc->InitRandom(num_particles, random_seed, pdata, true, containing_bx);
 
     // Phase 2: Randomize momenta with isotropic sampling
-    for (ParIterType pti(*pc, lev); pti.isValid(); ++pti) {
-      auto &particle_tile = pti.GetParticleTile();
-      auto ptd = particle_tile.getParticleTileData();
-      const int np = pti.numParticles();
+    for (int lev = 0; lev <= pc->finestLevel(); ++lev) {
+      for (ParIterType pti(*pc, lev); pti.isValid(); ++pti) {
+        auto &particle_tile = pti.GetParticleTile();
+        auto ptd = particle_tile.getParticleTileData();
+        const int np = pti.numParticles();
 
-      amrex::ParallelForRNG(
-          np, [=] AMREX_GPU_DEVICE(int i,
-                                   amrex::RandomEngine const &engine) noexcept {
-            const Real nu = 1.0;
-            Real costh = Random(engine) * 2 - 1;
-            Real ph = Random(engine) * (2 * M_PI);
-            Real sinth = std::sqrt(amrex::max(Real(0), 1 - costh * costh));
-            ptd.rdata(PIdx::px)[i] = nu * sinth * std::cos(ph);
-            ptd.rdata(PIdx::py)[i] = nu * sinth * std::sin(ph);
-            ptd.rdata(PIdx::pz)[i] = nu * costh;
-            ptd.idata(PIdxInt::species)[i] = 0;
-            ptd.idata(PIdxInt::cell_id)[i] = 0;
-          });
-    }
+        amrex::ParallelForRNG(
+            np, [=] AMREX_GPU_DEVICE(int i,
+                                     amrex::RandomEngine const &engine) noexcept {
+              const Real nu = 1.0;
+              Real costh = Random(engine) * 2 - 1;
+              Real ph = Random(engine) * (2 * M_PI);
+              Real sinth = std::sqrt(amrex::max(Real(0), 1 - costh * costh));
+              ptd.rdata(PIdx::px)[i] = nu * sinth * std::cos(ph);
+              ptd.rdata(PIdx::py)[i] = nu * sinth * std::sin(ph);
+              ptd.rdata(PIdx::pz)[i] = nu * costh;
+              ptd.idata(PIdxInt::species)[i] = 0;
+              ptd.idata(PIdxInt::cell_id)[i] = 0;
+            });
+      }
+    } // for lev
+
+    // Defensive redistribute after initialization
+    pc->Redistribute();
   } // for patch
 
   // IO
