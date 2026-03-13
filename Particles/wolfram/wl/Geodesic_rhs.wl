@@ -15,8 +15,11 @@ SetEQN[dinvgam[i_, j_, k_], -invgam[i, l] invgam[j, m] ADMdgam[-l, -m, k]];
 
 SetEQN[p2[], invgam[i, j] pmom[-i] pmom[-j]];
 
-SetEQN[pmomt[], (p2[]) ^ (1/2) / ADMalpha[]];
+SetEQN[pt[], (p2[]) ^ (1/2) / ADMalpha[]];
 
-SetEQN[dtxpos[i_], invgam[i, j] pmom[-j] / pmomt[] - ADMbeta[i]];
+SetEQN[dtxpos[i_], invgam[i, j] pmom[-j] / pt[] - ADMbeta[i]];
 
-SetEQN[dtpmom[i_], -ADMalpha[] pmomt[] ADMdalpha[i] + pmom[-j] ADMdbeta[j, i] - 1/(2 pmomt[]) pmom[-j] pmom[-k] dinvgam[j, k, i]];
+SetEQN[dtpmom[i_], -ADMalpha[] pt[] ADMdalpha[i] + pmom[-j] ADMdbeta[j, i] - 1/(2 pt[]) pmom[-j] pmom[-k] dinvgam[j, k, i]];
+
+SetEQN[pmomt[], pmom[-i] ADMbeta[i] - ADMalpha[] (p2[]) ^ (1/2)];
+

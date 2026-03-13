@@ -182,6 +182,7 @@ extern "C" void TestNuParticles_InitParticles(CCTK_ARGUMENTS) {
               ptd.rdata(PIdx::pz)[pidx] = pt * costh;
               ptd.rdata(PIdx::time)[pidx] = 0.0;
               ptd.rdata(PIdx::num_neutrinos)[pidx] = 1.0;
+              ptd.rdata(PIdx::pt)[pidx] = 0.0;
               ptd.idata(PIdxInt::species)[pidx] = 0;
               ptd.idata(PIdxInt::cell_id)[pidx] = cellid;
 

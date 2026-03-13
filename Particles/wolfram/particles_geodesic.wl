@@ -55,7 +55,7 @@ SetMainPrint[
   PrintInitializations[{Mode -> "MainOut"}, dtParticleVarlist];
   pr[];
 
-  PrintInitializations[{Mode -> "Temp"}, Drop[ParticleVarlist, 1]];
+  PrintInitializations[{Mode -> "Temp"}, ParticleVarlist[[2;;2]]];
   pr[];
 
   PrintInitializations[{Mode -> "Temp"}, Drop[ADMVarlist, {2, 3}]];
@@ -68,6 +68,26 @@ SetMainPrint[
   pr[];
 
   PrintEquations[{Mode -> "MainOut"}, dtParticleVarlist];
+  pr[];
+
+  pr["}"];
+  pr[];
+
+  pr["CCTK_HOST CCTK_DEVICE inline void"];
+  pr["calc_pt(ScalR &pmomt, const VectR &pmom,"];
+  pr["        const ScalR ADMalpha, const VectR &ADMbeta, const SmatR &ADMgam) {"];
+  pr[];
+
+  PrintInitializations[{Mode -> "Temp"}, Drop[ADMVarlist, {2, 3}]];
+  pr[];
+
+  PrintInitializations[{Mode -> "Temp"}, ParticleVarlist[[2;;2]]];
+  pr[];
+
+  PrintEquations[{Mode -> "Temp"}, Drop[Drop[TempVarlist, {3}], {-1}]];
+  pr[];
+
+  PrintEquations[{Mode -> "MainOut", ExtraReplaceRules -> {Sqrt[p2] -> sqrt[p2]}}, ParticleVarlist[[3;;3]]];
   pr[];
 
   pr["}"];

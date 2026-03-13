@@ -12,7 +12,7 @@ using namespace Particles;
 NuParticleContainer::NuParticleContainer(amrex::AmrCore *amr_core)
     : Container(amr_core) {
   SetSoACompileTimeNames(
-      {"x", "y", "z", "px", "py", "pz", "time", "num_neutrinos"},
+      {"x", "y", "z", "px", "py", "pz", "time", "num_neutrinos", "pt"},
       {"species", "cell_id"});
 }
 
@@ -46,6 +46,30 @@ gather_fields_calcrhs_at_pos(VectR &dtmom, VectR &dtpos, const VectR &mom,
 
   calc_rhs_geodesic(dtmom, dtpos, mom, alp_p, beta_p, g_p, dalp_p, dbeta_p,
                     dg_p);
+}
+
+CCTK_HOST CCTK_DEVICE CCTK_ATTRIBUTE_ALWAYS_INLINE inline void
+gather_fields_calcpt_at_pos(ScalR &pt, const VectR &mom, const VectR &pos,
+                            amrex::Array4<CCTK_REAL const> const &lapse_arr,
+                            amrex::Array4<CCTK_REAL const> const &shift_arr,
+                            amrex::Array4<CCTK_REAL const> const &met3d_arr,
+                            VectR const &plo, VectR const &dxi) {
+
+  const VertexLinear interp(pos, plo, dxi);
+
+  const ScalR alp_p = interp.gather(lapse_arr, 0);
+
+  VectR beta_p;
+  for (int c = 0; c < 3; ++c) {
+    beta_p[c] = interp.gather(shift_arr, c);
+  }
+
+  SmatR g_p;
+  for (int c = 0; c < 6; ++c) {
+    g_p[c] = interp.gather(met3d_arr, c);
+  }
+
+  calc_pt(pt, mom, alp_p, beta_p, g_p);
 }
 
 void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
@@ -155,6 +179,17 @@ void NuParticleContainer::PushAndDeposeParticles(const amrex::MultiFab &lapse,
     // Advance particle time
     amrex::ParallelFor(np, [=] CCTK_DEVICE(int i) noexcept {
       ptd.rdata(PIdx::time)[i] += dt;
+    });
+
+    // Compute p_t at the final state
+    amrex::ParallelFor(np, [=] CCTK_DEVICE(int i) noexcept {
+      const VectR pos_f{ptd.pos(0, i), ptd.pos(1, i), ptd.pos(2, i)};
+      const VectR mom_f{ptd.rdata(PIdx::px)[i], ptd.rdata(PIdx::py)[i],
+                        ptd.rdata(PIdx::pz)[i]};
+      ScalR pt_val;
+      gather_fields_calcpt_at_pos(pt_val, mom_f, pos_f, lapse_arr, shift_arr,
+                                  met3d_arr, plo, dxi);
+      ptd.rdata(PIdx::pt)[i] = pt_val;
     });
   }
 
@@ -322,7 +357,7 @@ void NuParticleContainer::OutputParticlesCheckpoint(const cGH *cctkGH) {
 
     // Names for user SoA attributes (positions excluded for pure SoA)
     const amrex::Vector<std::string> real_comp_names = {
-        "px", "py", "pz", "time", "num_neutrinos"};
+        "px", "py", "pz", "time", "num_neutrinos", "pt"};
     const amrex::Vector<std::string> int_comp_names = {"species", "cell_id"};
 
     this->Checkpoint(dir, "particles", real_comp_names, int_comp_names);
