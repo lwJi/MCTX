@@ -1,6 +1,6 @@
 # Schedule definitions for thorn TestNuParticles
 
-SCHEDULE TestNuParticles_InitFields AT initial AFTER NuParticleContainers_Setup
+SCHEDULE TestNuParticles_InitFields AT initial
 {
   LANG: C
   OPTIONS: local

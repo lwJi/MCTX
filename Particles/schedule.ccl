@@ -1,12 +1,12 @@
 # Schedule definitions for thorn Particles
 
-SCHEDULE NuParticleContainers_Setup AT initial
+SCHEDULE NuParticleContainers_Setup AT basegrid
 {
   LANG: C
   OPTIONS: global
 } "Setup Neutrino Particle Containers"
 
-SCHEDULE NuParticleContainers_Restart AT initial AFTER NuParticleContainers_Setup
+SCHEDULE NuParticleContainers_Restart AT initial
 {
   LANG: C
   OPTIONS: global
