@@ -8,6 +8,7 @@ ActiveThorns = "
 "
 
 Cactus::presync_mode = "mixed-error"
+Cactus::cctk_itlast = 128
 
 CarpetX::verbose = yes
 CarpetX::poison_undefined_values = yes
@@ -42,7 +43,6 @@ CarpetX::blocking_factor_z = 2
 CarpetX::ghost_size = 2
 CarpetX::dtfac = 0.5
 
-Cactus::cctk_itlast = 128
 
 CarpetX::regrid_error_threshold = 4.
 CarpetX::max_num_levels = 1
