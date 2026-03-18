@@ -24,6 +24,9 @@ extern "C" void TestNuPcsArdBH_InitParticles(CCTK_ARGUMENTS) {
   for (int patch = 0; patch < ghext->num_patches(); ++patch) {
     auto &pc = g_nupcs.at(patch);
 
+    if (pc->TotalNumberOfParticles() > 0)
+      continue;
+
     // Phase 1: Use AMReX InitRandom for positions + zero momenta
     // For SoA particles, InitRandom randomly generates positions into SoA
     // slots 0-2 (ignoring pdata.real_array_data[0..2]), and copies
