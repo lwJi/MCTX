@@ -13,8 +13,11 @@ std::vector<std::unique_ptr<NuParticleContainer>> g_nupcs;
 extern "C" void NuParticleContainers_Setup(CCTK_ARGUMENTS) {
   DECLARE_CCTK_PARAMETERS;
 
-  if (!g_nupcs.empty())
+  if (!g_nupcs.empty()) {
+    for (auto &pc : g_nupcs)
+      pc->resizeData();
     return;
+  }
 
   for (int patch = 0; patch < CarpetX::ghext->num_patches(); ++patch) {
     const auto &patchdata = CarpetX::ghext->patchdata.at(patch);

@@ -151,7 +151,7 @@ Numerical/AEILocalInterp
 CarpetX/ADMBaseX
 #CarpetX/Algo
 CarpetX/Arith
-#CarpetX/BoxInBox
+CarpetX/BoxInBox
 CarpetX/CarpetX
 CarpetX/CarpetXRegrid
 CarpetX/CoordinatesX
