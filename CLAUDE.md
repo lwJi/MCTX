@@ -29,8 +29,9 @@ Each thorn follows the Cactus format:
 
 ## Architecture
 
-- Particles are managed via AMReX `AmrParticleContainer` with SoA attributes for momentum (`NuParticleContainers.hxx`)
+- Particles are managed via AMReX `AmrParticleContainer` with SoA attributes for position, momentum, and particle properties (`NuParticleContainers.hxx`)
 - `NuParticleContainer` handles particle push (geodesic integration), deposition, and I/O
+- Multi-level AMR supported — particle containers resize across refinement levels; setup runs at BASEGRID
 - Symbolic expressions in `Particles/wolfram/` generate C++ headers (`.hxx`) — do not edit generated headers directly
 
 ## Key Patterns
